@@ -9,10 +9,12 @@ export interface Passenger {
 export interface RouteCard {
   id: string;
   vehicleNumber: number;
+  routeName: string;
   passengers: Passenger[];
   departureTime: string;
   pickupTimes: string[];
   arrivalTime: string;
+  estimatedTravelTime: string;
 }
 
 export const MOCK_PASSENGERS: Passenger[] = [
@@ -29,6 +31,9 @@ export function generateRoutes(passengers: Passenger[], arrivalTime: string, des
   const chunkSize = 3;
 
   const [hours, minutes] = arrivalTime.split(":").map(Number);
+
+  // Generate route names based on addresses
+  const routeNames = ["Rota A", "Rota B", "Rota C", "Rota D", "Rota E", "Rota F"];
 
   for (let i = 0; i < passengers.length; i += chunkSize) {
     const group = passengers.slice(i, i + chunkSize);
@@ -49,13 +54,26 @@ export function generateRoutes(passengers: Passenger[], arrivalTime: string, des
       return `${String(pH).padStart(2, "0")}:${String(pM).padStart(2, "0")}`;
     });
 
+    // Extract city from first passenger's address for route name
+    const firstAddress = group[0]?.address || "";
+    const cityMatch = firstAddress.match(/,\s*([^,]+)$/);
+    const routeName = cityMatch ? `Rota ${cityMatch[1].trim()}` : routeNames[vehicleNumber - 1] || `Rota ${vehicleNumber}`;
+
+    const travelHours = Math.floor(totalMinutes / 60);
+    const travelMins = totalMinutes % 60;
+    const estimatedTravelTime = travelHours > 0 
+      ? `${travelHours}h${travelMins > 0 ? String(travelMins).padStart(2, "0") : ""}` 
+      : `${travelMins} min`;
+
     routes.push({
       id: `route-${vehicleNumber}`,
       vehicleNumber,
+      routeName,
       passengers: group,
       departureTime: `${String(depH).padStart(2, "0")}:${String(depM).padStart(2, "0")}`,
       pickupTimes,
       arrivalTime,
+      estimatedTravelTime,
     });
   }
 
