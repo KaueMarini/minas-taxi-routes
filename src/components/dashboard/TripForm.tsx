@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,13 +17,28 @@ interface TripFormProps {
   setDestination: (v: string) => void;
   companyName: string;
   setCompanyName: (v: string) => void;
+  date: Date | undefined;
+  setDate: (d: Date | undefined) => void;
+  returnTime: string;
+  setReturnTime: (v: string) => void;
+  payment: string;
+  setPayment: (v: string) => void;
+  solicitante: string;
+  setSolicitante: (v: string) => void;
+  phone: string;
+  setPhone: (v: string) => void;
 }
 
-const TripForm = ({ arrivalTime, setArrivalTime, destination, setDestination, companyName, setCompanyName }: TripFormProps) => {
-  const [date, setDate] = useState<Date>();
-  const [returnTime, setReturnTime] = useState("");
-  const [payment, setPayment] = useState("");
-
+const TripForm = ({
+  arrivalTime, setArrivalTime,
+  destination, setDestination,
+  companyName, setCompanyName,
+  date, setDate,
+  returnTime, setReturnTime,
+  payment, setPayment,
+  solicitante, setSolicitante,
+  phone, setPhone,
+}: TripFormProps) => {
   return (
     <Card>
       <CardHeader className="pb-4">
@@ -36,11 +50,19 @@ const TripForm = ({ arrivalTime, setArrivalTime, destination, setDestination, co
       <CardContent className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label htmlFor="company">Nome da Empresa</Label>
-          <Input id="company" placeholder="Ex: Delp Engenharia" value={companyName} onChange={(e) => setCompanyName(e.target.value)} />
+          <Input id="company" placeholder="Ex: 284 – Delp Engenharia" value={companyName} onChange={(e) => setCompanyName(e.target.value)} />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="dest">Endereço de Destino</Label>
-          <Input id="dest" placeholder="Av. do Contorno, 5000" value={destination} onChange={(e) => setDestination(e.target.value)} />
+          <Input id="dest" placeholder="Av. das Nações, 999 - Distrito Industrial - Vespasiano/MG" value={destination} onChange={(e) => setDestination(e.target.value)} />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="solicitante">Solicitante</Label>
+          <Input id="solicitante" placeholder="Nome do solicitante" value={solicitante} onChange={(e) => setSolicitante(e.target.value)} />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="phone">Telefone de Contato</Label>
+          <Input id="phone" placeholder="(31) 99999-0000" value={phone} onChange={(e) => setPhone(e.target.value)} />
         </div>
         <div className="space-y-1.5">
           <Label>Data do Agendamento</Label>
@@ -72,6 +94,7 @@ const TripForm = ({ arrivalTime, setArrivalTime, destination, setDestination, co
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="faturado">Faturado</SelectItem>
+              <SelectItem value="boleto">Boleto</SelectItem>
               <SelectItem value="cartao">Cartão Corporativo</SelectItem>
               <SelectItem value="pix">PIX</SelectItem>
               <SelectItem value="dinheiro">Dinheiro</SelectItem>

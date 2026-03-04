@@ -1,13 +1,14 @@
 import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Car, LogOut } from "lucide-react";
+import { Car, LogOut, Map } from "lucide-react";
 import TripForm from "@/components/dashboard/TripForm";
 import FileUpload from "@/components/dashboard/FileUpload";
 import PassengerTable from "@/components/dashboard/PassengerTable";
 import RouteResults from "@/components/dashboard/RouteResults";
 import { Passenger, RouteCard, MOCK_PASSENGERS, generateRoutes } from "@/lib/mock-data";
-import { Map } from "lucide-react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -17,6 +18,11 @@ const Dashboard = () => {
   const [arrivalTime, setArrivalTime] = useState("08:00");
   const [destination, setDestination] = useState("");
   const [companyName, setCompanyName] = useState("");
+  const [date, setDate] = useState<Date>();
+  const [returnTime, setReturnTime] = useState("");
+  const [payment, setPayment] = useState("");
+  const [solicitante, setSolicitante] = useState("");
+  const [phone, setPhone] = useState("");
 
   const handleFileUpload = useCallback(() => {
     setPassengers([...MOCK_PASSENGERS]);
@@ -51,9 +57,10 @@ const Dashboard = () => {
     ]);
   }, []);
 
+  const scheduledDate = date ? format(date, "dd/MM/yyyy", { locale: ptBR }) : undefined;
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="sticky top-0 z-30 border-b bg-card/80 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between px-4 md:px-8">
           <div className="flex items-center gap-3">
@@ -68,12 +75,7 @@ const Dashboard = () => {
             <span className="hidden text-sm text-muted-foreground sm:inline">
               Olá, <strong className="text-foreground">Operador</strong>
             </span>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="gap-2 text-muted-foreground"
-              onClick={() => navigate("/")}
-            >
+            <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground" onClick={() => navigate("/")}>
               <LogOut className="h-4 w-4" />
               <span className="hidden sm:inline">Sair</span>
             </Button>
@@ -81,18 +83,18 @@ const Dashboard = () => {
         </div>
       </header>
 
-      {/* Main */}
       <main className="mx-auto max-w-[1440px] px-4 py-6 md:px-8 md:py-8">
         <div className="grid gap-8 lg:grid-cols-[1fr_1fr]">
-          {/* Left Column */}
           <div className="space-y-6">
             <TripForm
-              arrivalTime={arrivalTime}
-              setArrivalTime={setArrivalTime}
-              destination={destination}
-              setDestination={setDestination}
-              companyName={companyName}
-              setCompanyName={setCompanyName}
+              arrivalTime={arrivalTime} setArrivalTime={setArrivalTime}
+              destination={destination} setDestination={setDestination}
+              companyName={companyName} setCompanyName={setCompanyName}
+              date={date} setDate={setDate}
+              returnTime={returnTime} setReturnTime={setReturnTime}
+              payment={payment} setPayment={setPayment}
+              solicitante={solicitante} setSolicitante={setSolicitante}
+              phone={phone} setPhone={setPhone}
             />
 
             <FileUpload onUpload={handleFileUpload} hasPassengers={passengers.length > 0} />
@@ -118,13 +120,17 @@ const Dashboard = () => {
             )}
           </div>
 
-          {/* Right Column */}
           <div>
             <RouteResults
               routes={routes}
               isOptimizing={isOptimizing}
               companyName={companyName}
               destination={destination}
+              scheduledDate={scheduledDate}
+              arrivalTime={arrivalTime}
+              payment={payment}
+              solicitante={solicitante}
+              phone={phone}
             />
           </div>
         </div>
