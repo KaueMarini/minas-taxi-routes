@@ -6,9 +6,10 @@ import TripForm from "@/components/dashboard/TripForm";
 import FileUpload from "@/components/dashboard/FileUpload";
 import PassengerTable from "@/components/dashboard/PassengerTable";
 import RouteResults from "@/components/dashboard/RouteResults";
-import { Passenger, RouteCard, MOCK_PASSENGERS, generateRoutes } from "@/lib/mock-data";
+import { Passenger, RouteCard, MOCK_PASSENGERS } from "@/lib/mock-data";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { toast } from "sonner";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -25,19 +26,11 @@ const Dashboard = () => {
   const [phone, setPhone] = useState("");
 
   const handleFileUpload = useCallback(() => {
+    // Mantido como MOCK apenas para demonstração visual do upload.
+    // Numa versão final real, aqui você processaria o Excel e setaria no setPassengers
     setPassengers([...MOCK_PASSENGERS]);
     setRoutes([]);
   }, []);
-
-  const handleOptimize = useCallback(() => {
-    if (passengers.length === 0) return;
-    setIsOptimizing(true);
-    setTimeout(() => {
-      const result = generateRoutes(passengers, arrivalTime, destination);
-      setRoutes(result);
-      setIsOptimizing(false);
-    }, 2200);
-  }, [passengers, arrivalTime, destination]);
 
   const handleDeletePassenger = useCallback((id: string) => {
     setPassengers((prev) => prev.filter((p) => p.id !== id));
@@ -58,6 +51,60 @@ const Dashboard = () => {
   }, []);
 
   const scheduledDate = date ? format(date, "dd/MM/yyyy", { locale: ptBR }) : undefined;
+
+  // ==========================================
+  // NOVA INTEGRAÇÃO COM O N8N (WEBHOOK)
+  // ==========================================
+  const handleOptimize = useCallback(async () => {
+    if (passengers.length === 0) return;
+    
+    if (!destination) {
+      toast.error("Por favor, preencha o endereço de destino da empresa.");
+      return;
+    }
+
+    setIsOptimizing(true);
+    setRoutes([]); // Limpa as rotas antigas da tela
+
+    try {
+      // Monta o pacote de dados exato que o seu n8n vai receber
+      const payload = {
+        empresa_cnpj: companyName,
+        solicitante: solicitante,
+        telefone: phone,
+        pagamento: payment,
+        data_agendamento: scheduledDate,
+        horario_chegada: arrivalTime,
+        destino_final: destination,
+        passageiros: passengers
+      };
+
+      // Dispara a requisição para o seu n8n
+      const response = await fetch("https://webhook.saveautomatik.shop/webhook/TaxiOtimizarRotas", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error("Falha na comunicação com o servidor de IA.");
+      }
+
+      // O n8n precisa devolver um array no formato RouteCard[]
+      const data = await response.json();
+      
+      setRoutes(data);
+      toast.success("Rotas otimizadas com sucesso!");
+
+    } catch (error) {
+      console.error("Erro ao otimizar:", error);
+      toast.error("Ocorreu um erro ao calcular as rotas. Tente novamente.");
+    } finally {
+      setIsOptimizing(false);
+    }
+  }, [passengers, arrivalTime, destination, companyName, solicitante, phone, payment, scheduledDate]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -115,7 +162,7 @@ const Dashboard = () => {
                 disabled={isOptimizing}
               >
                 <Map className="h-5 w-5" />
-                {isOptimizing ? "Analisando endereços e calculando rotas..." : "Otimizar Rotas com IA"}
+                {isOptimizing ? "Enviando para a IA..." : "Otimizar Rotas com IA"}
               </Button>
             )}
           </div>

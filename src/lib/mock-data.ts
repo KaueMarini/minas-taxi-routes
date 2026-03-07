@@ -17,60 +17,82 @@ export interface RouteCard {
   estimatedTravelTime: string;
 }
 
-export const MOCK_PASSENGERS: Passenger[] = [
-  { id: "1", name: "Carlos Eduardo Silva", address: "Rua Paraíba, 420 - Funcionários, BH", phone: "(31) 99812-3456", costCenter: "ENG-001" },
-  { id: "2", name: "Ana Beatriz Souza", address: "Av. Afonso Pena, 1500 - Centro, BH", phone: "(31) 98765-4321", costCenter: "ADM-002" },
-  { id: "3", name: "Roberto Mendes", address: "Rua Sergipe, 850 - Savassi, BH", phone: "(31) 99654-7890", costCenter: "TI-003" },
-  { id: "4", name: "Juliana Ferreira", address: "Rua Espírito Santo, 1200 - Lourdes, BH", phone: "(31) 97432-1098", costCenter: "RH-004" },
-  { id: "5", name: "Pedro Henrique Costa", address: "Av. Brasil, 2300 - Santa Efigênia, BH", phone: "(31) 98321-6543", costCenter: "FIN-005" },
-  { id: "6", name: "Mariana Oliveira", address: "Rua Curitiba, 670 - Centro, BH", phone: "(31) 99178-2345", costCenter: "ENG-001" },
-];
+// Lista vazia por padrão, pois os dados virão do Excel ou formulário
+export const MOCK_PASSENGERS: Passenger[] = [];
 
+/**
+ * FUNÇÃO DE INTELIGÊNCIA DE ROTAS
+ * Agrupa passageiros por proximidade (baseado no texto do bairro/cidade),
+ * limita a 3 por carro e calcula os horários lógicos.
+ */
 export function generateRoutes(passengers: Passenger[], arrivalTime: string, destination: string): RouteCard[] {
   const routes: RouteCard[] = [];
-  const chunkSize = 3;
+  const MAX_PASSENGERS_PER_CAR = 3;
 
-  const [hours, minutes] = arrivalTime.split(":").map(Number);
+  // 1. ALGORITMO DE AGRUPAMENTO (Clusterização por texto)
+  // Ordena os passageiros extraindo a última parte do endereço (geralmente Bairro ou Cidade/Estado)
+  // Assim, pessoas da mesma região ficam juntas no array antes de dividir nos carros.
+  const sortedPassengers = [...passengers].sort((a, b) => {
+    const getRegion = (addr: string) => {
+      const parts = addr.split('-');
+      return parts.length > 1 ? parts[parts.length - 1].trim().toLowerCase() : addr.toLowerCase();
+    };
+    return getRegion(a.address).localeCompare(getRegion(b.address));
+  });
 
-  // Generate route names based on addresses
-  const routeNames = ["Rota A", "Rota B", "Rota C", "Rota D", "Rota E", "Rota F"];
+  // Converte o horário de chegada exigido (Ex: "08:00") para minutos totais
+  const [arrivalHours, arrivalMinutes] = arrivalTime.split(":").map(Number);
+  const arrivalTotalMinutes = arrivalHours * 60 + arrivalMinutes;
 
-  for (let i = 0; i < passengers.length; i += chunkSize) {
-    const group = passengers.slice(i, i + chunkSize);
-    const vehicleNumber = Math.floor(i / chunkSize) + 1;
+  // 2. DIVISÃO EM CARROS E CÁLCULO DE TEMPO
+  for (let i = 0; i < sortedPassengers.length; i += MAX_PASSENGERS_PER_CAR) {
+    const group = sortedPassengers.slice(i, i + MAX_PASSENGERS_PER_CAR);
+    const vehicleNumber = Math.floor(i / MAX_PASSENGERS_PER_CAR) + 1;
 
-    const totalPickupMinutes = group.length * 12;
+    // Regras de tempo simuladas (pode ajustar conforme a realidade):
+    // - 20 minutos de viagem base até a empresa
+    // - Mais 12 minutos adicionais para CADA passageiro no carro (tempo de desvio/embarque)
     const travelMinutes = 20;
-    const totalMinutes = totalPickupMinutes + travelMinutes;
+    const totalPickupMinutes = group.length * 12; 
+    const totalRouteDuration = totalPickupMinutes + travelMinutes;
 
-    const departureTotal = hours * 60 + minutes - totalMinutes;
-    const depH = Math.floor(departureTotal / 60);
-    const depM = departureTotal % 60;
+    // Calcula que horas o motorista tem que sair para buscar o PRIMEIRO passageiro
+    const departureTotalMinutes = arrivalTotalMinutes - totalRouteDuration;
+    
+    // Formata a hora de saída do 1º passageiro
+    const depH = Math.floor(departureTotalMinutes / 60);
+    const depM = departureTotalMinutes % 60;
+    const formattedDepartureTime = `${String(depH).padStart(2, "0")}:${String(depM).padStart(2, "0")}`;
 
+    // Calcula os horários de embarque de cada passageiro subsequente
     const pickupTimes = group.map((_, idx) => {
-      const pickupTotal = departureTotal + idx * 12;
+      // O primeiro embarca na hora de saída, os próximos a cada 12 minutos
+      const pickupTotal = departureTotalMinutes + (idx * 12);
       const pH = Math.floor(pickupTotal / 60);
       const pM = pickupTotal % 60;
       return `${String(pH).padStart(2, "0")}:${String(pM).padStart(2, "0")}`;
     });
 
-    // Extract city from first passenger's address for route name
+    // Gera um nome para a rota baseado na região do primeiro passageiro do carro
     const firstAddress = group[0]?.address || "";
-    const cityMatch = firstAddress.match(/,\s*([^,]+)$/);
-    const routeName = cityMatch ? `Rota ${cityMatch[1].trim()}` : routeNames[vehicleNumber - 1] || `Rota ${vehicleNumber}`;
+    const cityMatch = firstAddress.split('-');
+    const regionName = cityMatch.length > 1 ? cityMatch[cityMatch.length - 1].trim() : "Rota " + vehicleNumber;
+    const routeName = `Região ${regionName}`;
 
-    const travelHours = Math.floor(totalMinutes / 60);
-    const travelMins = totalMinutes % 60;
+    // Formata o tempo estimado de viagem (Ex: 1h15 ou 45 min)
+    const travelHours = Math.floor(totalRouteDuration / 60);
+    const travelMins = totalRouteDuration % 60;
     const estimatedTravelTime = travelHours > 0 
       ? `${travelHours}h${travelMins > 0 ? String(travelMins).padStart(2, "0") : ""}` 
       : `${travelMins} min`;
 
+    // Salva o "Carro" na lista final
     routes.push({
       id: `route-${vehicleNumber}`,
       vehicleNumber,
       routeName,
       passengers: group,
-      departureTime: `${String(depH).padStart(2, "0")}:${String(depM).padStart(2, "0")}`,
+      departureTime: formattedDepartureTime,
       pickupTimes,
       arrivalTime,
       estimatedTravelTime,
