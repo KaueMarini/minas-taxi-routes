@@ -25,9 +25,8 @@ const Dashboard = () => {
   const [solicitante, setSolicitante] = useState("");
   const [phone, setPhone] = useState("");
 
-  const handleFileUpload = useCallback(() => {
-    // File upload now just signals that a file was selected
-    // Real parsing should happen here in the future
+  const handleFileParsed = useCallback((parsed: Passenger[]) => {
+    setPassengers(parsed);
     setRoutes([]);
   }, []);
 
@@ -143,7 +142,7 @@ const Dashboard = () => {
               phone={phone} setPhone={setPhone}
             />
 
-            <FileUpload onUpload={handleFileUpload} hasPassengers={passengers.length > 0} />
+            <FileUpload onParsed={handleFileParsed} hasPassengers={passengers.length > 0} />
 
             {passengers.length > 0 && (
               <PassengerTable
