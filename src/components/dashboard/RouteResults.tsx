@@ -1,8 +1,7 @@
-import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RouteCard } from "@/lib/mock-data";
-import { Car, Copy, MapPin, Clock, Loader2, Navigation, Send } from "lucide-react";
+import { Car, Copy, MapPin, Clock, Loader2, Navigation, Phone, User } from "lucide-react";
 import { toast } from "sonner";
 
 interface RouteResultsProps {
@@ -36,8 +35,6 @@ const RouteResults = ({
   solicitante,
   phone,
 }: RouteResultsProps) => {
-  const [sendingRouteId, setSendingRouteId] = useState<string | null>(null);
-
   const copyRoute = (route: RouteCard) => {
     const costCenters = route.passengers
       .map((p) => p.costCenter)
@@ -106,70 +103,6 @@ const RouteResults = ({
 
     navigator.clipboard.writeText(allText);
     toast.success("Todas as rotas copiadas!");
-  };
-
-  const sendToWebhook = async (route: RouteCard) => {
-    setSendingRouteId(route.id);
-
-    try {
-      // Estruturando o payload para facilitar a montagem do /rideCreate no n8n
-      const payload = {
-        request_id: `REQ-${Date.now()}-${route.id}`,
-        category: "taxi", // Padrão da doc
-        passengers_no: route.passengers.length,
-        payment_type: payment || "ONLINE_PAYMENT", 
-        passenger_note: `Empresa: ${companyName || 'N/A'} | Solicitante: ${solicitante || 'N/A'}`,
-        
-        // Dados extras de agendamento que o seu n8n pode converter para UNIX Time (pickup_time)
-        scheduling_info: {
-          scheduledDate,
-          departureTime: route.departureTime,
-          arrivalTime: route.arrivalTime,
-        },
-        
-        // Mapeando passageiros no formato esperado para "users"
-        users: route.passengers.map((p, index) => ({
-          id: index + 1, // API pede ID numérico sequencial
-          sequence: (index * 2) + 1, // Ímpares para embarque (1, 3, 5)
-          name: p.name,
-          phone: p.phone || phone || "00000000000",
-          passenger_cost_center: p.costCenter || "",
-          pickup: {
-            address: p.address,
-            // Como o frontend manda endereço corrido, mandamos aqui.
-            // O ideal para a API é ter city, state separados, mas você pode tratar ou deixar passar direto dependendo de como a Original Software aceita.
-          }
-        })),
-
-        // Mapeando destinos. Assumindo que num trajeto roteirizado, a empresa/destino é o ponto final de todos.
-        destinations: route.passengers.map((p, index) => ({
-          passengerId: index + 1,
-          sequence: (index * 2) + 2, // Pares para desembarque (2, 4, 6)
-          location: {
-            address: destination || "Endereço não informado",
-          }
-        }))
-      };
-
-      const response = await fetch("https://webhook.saveautomatik.shop/webhook/apiTaxi", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Erro HTTP: ${response.status}`);
-      }
-
-      toast.success(`Carro ${route.vehicleNumber} enviado para despacho com sucesso!`);
-    } catch (error) {
-      console.error("Erro ao disparar webhook:", error);
-      toast.error(`Falha ao enviar o Carro ${route.vehicleNumber} para a API.`);
-    } finally {
-      setSendingRouteId(null);
-    }
   };
 
   if (isOptimizing) {
@@ -271,34 +204,15 @@ const RouteResults = ({
               </div>
             </div>
 
-            {/* Botões de Ação */}
-            <div className="mt-5 flex flex-col gap-2 sm:flex-row">
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full gap-2"
-                onClick={() => copyRoute(route)}
-              >
-                <Copy className="h-3.5 w-3.5" />
-                Copiar Resumo
-              </Button>
-              
-              <Button
-                variant="default"
-                size="sm"
-                className="w-full gap-2 bg-black text-white hover:bg-black/80"
-                onClick={() => sendToWebhook(route)}
-                disabled={sendingRouteId === route.id}
-              >
-                {sendingRouteId === route.id ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Send className="h-3.5 w-3.5" />
-                )}
-                Enviar p/ Despacho
-              </Button>
-            </div>
-
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-3 w-full gap-2"
+              onClick={() => copyRoute(route)}
+            >
+              <Copy className="h-3.5 w-3.5" />
+              Copiar Resumo da Rota
+            </Button>
           </CardContent>
         </Card>
       ))}
