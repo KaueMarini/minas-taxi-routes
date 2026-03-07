@@ -29,15 +29,63 @@ const Dashboard = () => {
     setRoutes([]);
   }, []);
 
-  const handleOptimize = useCallback(() => {
+  const handleOptimize = useCallback(async () => {
     if (passengers.length === 0) return;
     setIsOptimizing(true);
-    setTimeout(() => {
+    try {
+      const payload = {
+        passengers: passengers.map((p) => ({
+          id: p.id,
+          name: p.name,
+          address: p.address,
+          phone: p.phone,
+          costCenter: p.costCenter,
+        })),
+        destination,
+        companyName,
+        arrivalTime,
+        returnTime,
+        payment,
+        solicitante,
+        phone,
+        scheduledDate: date ? format(date, "yyyy-MM-dd") : undefined,
+      };
+
+      const response = await fetch(
+        "https://webhook.saveautomatik.shop/webhook/TaxiOtimizarRotas",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Erro no webhook: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      // Espera um array de RouteCard do n8n
+      if (Array.isArray(data)) {
+        setRoutes(data as RouteCard[]);
+      } else if (data.routes && Array.isArray(data.routes)) {
+        setRoutes(data.routes as RouteCard[]);
+      } else {
+        // Fallback para mock caso o formato não seja reconhecido
+        console.warn("Formato de resposta não reconhecido, usando mock:", data);
+        const result = generateRoutes(passengers, arrivalTime, destination);
+        setRoutes(result);
+      }
+    } catch (error) {
+      console.error("Erro ao chamar webhook:", error);
+      toast.error("Erro ao otimizar rotas. Usando cálculo local.");
       const result = generateRoutes(passengers, arrivalTime, destination);
       setRoutes(result);
+    } finally {
       setIsOptimizing(false);
-    }, 2200);
-  }, [passengers, arrivalTime, destination]);
+    }
+  }, [passengers, arrivalTime, destination, companyName, returnTime, payment, solicitante, phone, date]);
 
   const handleDeletePassenger = useCallback((id: string) => {
     setPassengers((prev) => prev.filter((p) => p.id !== id));
