@@ -7,7 +7,7 @@ import TripForm from "@/components/dashboard/TripForm";
 import FileUpload from "@/components/dashboard/FileUpload";
 import PassengerTable from "@/components/dashboard/PassengerTable";
 import RouteResults from "@/components/dashboard/RouteResults";
-import { Passenger, RouteCard, MOCK_PASSENGERS, generateRoutes } from "@/lib/mock-data";
+import { Passenger, RouteCard } from "@/lib/mock-data";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -26,7 +26,8 @@ const Dashboard = () => {
   const [phone, setPhone] = useState("");
 
   const handleFileUpload = useCallback(() => {
-    setPassengers([...MOCK_PASSENGERS]);
+    // File upload now just signals that a file was selected
+    // Real parsing should happen here in the future
     setRoutes([]);
   }, []);
 
@@ -73,16 +74,12 @@ const Dashboard = () => {
       } else if (data.routes && Array.isArray(data.routes)) {
         setRoutes(data.routes as RouteCard[]);
       } else {
-        // Fallback para mock caso o formato não seja reconhecido
-        console.warn("Formato de resposta não reconhecido, usando mock:", data);
-        const result = generateRoutes(passengers, arrivalTime, destination);
-        setRoutes(result);
+        console.warn("Formato de resposta não reconhecido:", data);
+        toast.error("Formato de resposta do servidor não reconhecido.");
       }
     } catch (error) {
       console.error("Erro ao chamar webhook:", error);
-      toast.error("Erro ao otimizar rotas. Usando cálculo local.");
-      const result = generateRoutes(passengers, arrivalTime, destination);
-      setRoutes(result);
+      toast.error("Erro ao otimizar rotas. Verifique a conexão com o servidor.");
     } finally {
       setIsOptimizing(false);
     }
