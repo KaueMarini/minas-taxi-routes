@@ -67,11 +67,13 @@ const Dashboard = () => {
 
       const data = await response.json();
 
-      // Espera um array de RouteCard do n8n
+      // Aceita array, objeto com .routes, ou objeto único
       if (Array.isArray(data)) {
         setRoutes(data as RouteCard[]);
       } else if (data.routes && Array.isArray(data.routes)) {
         setRoutes(data.routes as RouteCard[]);
+      } else if (data.id && data.passengers) {
+        setRoutes([data as RouteCard]);
       } else {
         console.warn("Formato de resposta não reconhecido:", data);
         toast.error("Formato de resposta do servidor não reconhecido.");
