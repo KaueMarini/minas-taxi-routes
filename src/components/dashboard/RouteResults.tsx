@@ -259,15 +259,26 @@ const RouteResults = ({
               </div>
             </div>
 
-            <Button
-              variant="outline"
-              size="sm"
-              className="mt-3 w-full gap-2"
-              onClick={() => copyRoute(route)}
-            >
-              <Copy className="h-3.5 w-3.5" />
-              Copiar Resumo da Rota
-            </Button>
+            <div className="mt-3 flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 gap-2"
+                onClick={() => copyRoute(route)}
+              >
+                <Copy className="h-3.5 w-3.5" />
+                Copiar Resumo
+              </Button>
+              <Button
+                size="sm"
+                className="flex-1 gap-2"
+                onClick={() => sendRouteToWebhook(route)}
+                disabled={sendingRouteId === route.id}
+              >
+                <Send className="h-3.5 w-3.5" />
+                {sendingRouteId === route.id ? "Enviando..." : "Enviar Corrida"}
+              </Button>
+            </div>
           </CardContent>
         </Card>
       ))}
