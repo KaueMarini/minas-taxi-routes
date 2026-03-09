@@ -1,8 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RouteCard } from "@/lib/mock-data";
-import { Car, Copy, MapPin, Clock, Loader2, Navigation, Phone, User } from "lucide-react";
+import { Car, Copy, MapPin, Clock, Loader2, Navigation, Send } from "lucide-react";
 import { toast } from "sonner";
+import { useState } from "react";
 
 interface RouteResultsProps {
   routes: RouteCard[];
