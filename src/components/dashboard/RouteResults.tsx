@@ -1,8 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RouteCard } from "@/lib/mock-data";
-import { Car, Copy, MapPin, Clock, Loader2, Navigation, Phone, User } from "lucide-react";
+import { Car, Copy, MapPin, Clock, Loader2, Navigation, Send } from "lucide-react";
 import { toast } from "sonner";
+import { useState } from "react";
 
 interface RouteResultsProps {
   routes: RouteCard[];
@@ -35,6 +36,60 @@ const RouteResults = ({
   solicitante,
   phone,
 }: RouteResultsProps) => {
+  const [sendingRouteId, setSendingRouteId] = useState<string | null>(null);
+
+  const sendRouteToWebhook = async (route: RouteCard) => {
+    setSendingRouteId(route.id);
+    try {
+      const payload = {
+        trip: {
+          company: companyName || "",
+          requester: solicitante || "",
+          requesterPhone: phone || "",
+          scheduledDate: scheduledDate || "",
+          arrivalTime: route.arrivalTime,
+          departureTime: route.departureTime,
+          estimatedTravelTime: route.estimatedTravelTime,
+          vehicleNumber: route.vehicleNumber,
+          routeName: route.routeName,
+          payment: payment || "",
+          passengers: route.passengers.map((p, i) => ({
+            passengerId: i + 1,
+            sequence: (i + 1) * 2 - 1,
+            name: p.name,
+            phone: p.phone || "",
+            passenger_cost_center: p.costCenter || "",
+            pickup: { address: p.address },
+          })),
+          destinations: route.passengers.map((p, i) => ({
+            passengerId: i + 1,
+            sequence: (i + 1) * 2,
+            location: { address: destination || "" },
+          })),
+        },
+        webhookUrl: "https://webhook.saveautomatik.shop/webhook/apiTaxi",
+        executionMode: "production",
+      };
+
+      const response = await fetch(
+        "https://webhook.saveautomatik.shop/webhook/apiTaxi",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (!response.ok) throw new Error(`Erro: ${response.status}`);
+      toast.success(`Carro ${route.vehicleNumber} enviado com sucesso!`);
+    } catch (error) {
+      console.error("Erro ao enviar rota:", error);
+      toast.error(`Erro ao enviar Carro ${route.vehicleNumber}.`);
+    } finally {
+      setSendingRouteId(null);
+    }
+  };
+
   const copyRoute = (route: RouteCard) => {
     const costCenters = route.passengers
       .map((p) => p.costCenter)
@@ -204,15 +259,26 @@ const RouteResults = ({
               </div>
             </div>
 
-            <Button
-              variant="outline"
-              size="sm"
-              className="mt-3 w-full gap-2"
-              onClick={() => copyRoute(route)}
-            >
-              <Copy className="h-3.5 w-3.5" />
-              Copiar Resumo da Rota
-            </Button>
+            <div className="mt-3 flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 gap-2"
+                onClick={() => copyRoute(route)}
+              >
+                <Copy className="h-3.5 w-3.5" />
+                Copiar Resumo
+              </Button>
+              <Button
+                size="sm"
+                className="flex-1 gap-2"
+                onClick={() => sendRouteToWebhook(route)}
+                disabled={sendingRouteId === route.id}
+              >
+                <Send className="h-3.5 w-3.5" />
+                {sendingRouteId === route.id ? "Enviando..." : "Enviar Corrida"}
+              </Button>
+            </div>
           </CardContent>
         </Card>
       ))}
