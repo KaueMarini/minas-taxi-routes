@@ -36,6 +36,60 @@ const RouteResults = ({
   solicitante,
   phone,
 }: RouteResultsProps) => {
+  const [sendingRouteId, setSendingRouteId] = useState<string | null>(null);
+
+  const sendRouteToWebhook = async (route: RouteCard) => {
+    setSendingRouteId(route.id);
+    try {
+      const payload = {
+        trip: {
+          company: companyName || "",
+          requester: solicitante || "",
+          requesterPhone: phone || "",
+          scheduledDate: scheduledDate || "",
+          arrivalTime: route.arrivalTime,
+          departureTime: route.departureTime,
+          estimatedTravelTime: route.estimatedTravelTime,
+          vehicleNumber: route.vehicleNumber,
+          routeName: route.routeName,
+          payment: payment || "",
+          passengers: route.passengers.map((p, i) => ({
+            passengerId: i + 1,
+            sequence: (i + 1) * 2 - 1,
+            name: p.name,
+            phone: p.phone || "",
+            passenger_cost_center: p.costCenter || "",
+            pickup: { address: p.address },
+          })),
+          destinations: route.passengers.map((p, i) => ({
+            passengerId: i + 1,
+            sequence: (i + 1) * 2,
+            location: { address: destination || "" },
+          })),
+        },
+        webhookUrl: "https://webhook.saveautomatik.shop/webhook/apiTaxi",
+        executionMode: "production",
+      };
+
+      const response = await fetch(
+        "https://webhook.saveautomatik.shop/webhook/apiTaxi",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (!response.ok) throw new Error(`Erro: ${response.status}`);
+      toast.success(`Carro ${route.vehicleNumber} enviado com sucesso!`);
+    } catch (error) {
+      console.error("Erro ao enviar rota:", error);
+      toast.error(`Erro ao enviar Carro ${route.vehicleNumber}.`);
+    } finally {
+      setSendingRouteId(null);
+    }
+  };
+
   const copyRoute = (route: RouteCard) => {
     const costCenters = route.passengers
       .map((p) => p.costCenter)
