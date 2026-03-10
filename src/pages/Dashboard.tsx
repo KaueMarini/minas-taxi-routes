@@ -18,12 +18,18 @@ const Dashboard = () => {
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [arrivalTime, setArrivalTime] = useState("08:00");
   const [destination, setDestination] = useState("");
+  const [companyCnpj, setCompanyCnpj] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [date, setDate] = useState<Date>();
   const [returnTime, setReturnTime] = useState("");
   const [payment, setPayment] = useState("");
   const [solicitante, setSolicitante] = useState("");
   const [phone, setPhone] = useState("");
+
+  const handleCompanySelect = useCallback((cnpj: string, name: string) => {
+    setCompanyCnpj(cnpj);
+    setCompanyName(name);
+  }, []);
 
   const handleFileParsed = useCallback((parsed: Passenger[]) => {
     setPassengers(parsed);
