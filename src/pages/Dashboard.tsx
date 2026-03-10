@@ -12,7 +12,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 const Dashboard = () => {
-  const navigate = useNavigate();
+  const { session, signOut } = useAuth();
   const [passengers, setPassengers] = useState<Passenger[]>([]);
   const [routes, setRoutes] = useState<RouteCard[]>([]);
   const [isOptimizing, setIsOptimizing] = useState(false);
