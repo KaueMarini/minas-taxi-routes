@@ -16,61 +16,50 @@ const Login = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) {
-      toast.error("Preencha e-mail e senha.");
-      return;
-    }
+    if (!email || !password) { toast.error("Preencha e-mail e senha."); return; }
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      toast.error("E-mail ou senha inválidos.");
-      setLoading(false);
-      return;
-    }
+    if (error) { toast.error("E-mail ou senha inválidos."); setLoading(false); return; }
     navigate("/dashboard");
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-taxi-dark p-4">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_hsl(43_78%_46%_/_0.15),_transparent_60%)]" />
-      <Card className="relative z-10 w-full max-w-md border-none bg-card/95 shadow-2xl backdrop-blur">
-        <CardContent className="p-8 md:p-10">
+    <div className="flex min-h-screen items-center justify-center bg-background p-4">
+      {/* Subtle gradient background */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_hsl(43_78%_46%_/_0.08),_transparent_50%)]" />
+
+      <Card className="relative z-10 w-full max-w-sm animate-fade-in border shadow-lg">
+        <CardContent className="p-8">
           <div className="mb-8 text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary">
-              <Car className="h-8 w-8 text-primary-foreground" />
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary shadow-md">
+              <Car className="h-7 w-7 text-primary-foreground" />
             </div>
-            <h1 className="font-display text-3xl font-bold tracking-tight text-foreground">
+            <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">
               Minas Taxi
             </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <p className="mt-1 text-xs text-muted-foreground">
               Painel de Inteligência de Rotas
             </p>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-5">
-            <div className="space-y-2">
-              <Label htmlFor="email">E-mail</Label>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="email" className="text-xs">E-mail</Label>
               <Input
-                id="email"
-                type="email"
-                placeholder="seu@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="h-11"
+                id="email" type="email" placeholder="seu@email.com"
+                value={email} onChange={(e) => setEmail(e.target.value)}
+                className="h-10"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Senha</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="password" className="text-xs">Senha</Label>
               <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="h-11"
+                id="password" type="password" placeholder="••••••••"
+                value={password} onChange={(e) => setPassword(e.target.value)}
+                className="h-10"
               />
             </div>
-            <Button type="submit" className="h-11 w-full gap-2 text-base font-semibold" disabled={loading}>
+            <Button type="submit" className="h-10 w-full gap-2 font-semibold shadow-md" disabled={loading}>
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogIn className="h-4 w-4" />}
               {loading ? "Entrando..." : "Entrar"}
             </Button>
