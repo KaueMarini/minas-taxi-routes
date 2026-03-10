@@ -123,7 +123,7 @@ const Dashboard = () => {
             <img src={logo} alt="Minas Táxi" className="h-8 w-8 rounded-lg shadow-sm" />
             <div className="flex items-center gap-2">
               <span className="font-display text-lg font-bold text-foreground">
-                Minas Taxi
+                Minas Táxi
               </span>
               <Badge variant="secondary" className="hidden text-[10px] font-medium sm:inline-flex">
                 Painel de Rotas

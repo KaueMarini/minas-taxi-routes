@@ -34,7 +34,7 @@ const Login = () => {
           <div className="mb-8 text-center">
             <img src={logo} alt="Minas Táxi" className="mx-auto mb-1 h-20 w-20 rounded-2xl shadow-md" />
             <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">
-              Minas Taxi
+              Minas Táxi
             </h1>
             <p className="mt-1 text-xs text-muted-foreground">
               Painel de Inteligência de Rotas
