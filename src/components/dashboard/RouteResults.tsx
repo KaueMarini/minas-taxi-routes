@@ -9,6 +9,7 @@ interface RouteResultsProps {
   routes: RouteCard[];
   isOptimizing: boolean;
   companyName: string;
+  companyCnpj: string;
   destination: string;
   scheduledDate?: string;
   arrivalTime: string;
@@ -29,6 +30,7 @@ const RouteResults = ({
   routes,
   isOptimizing,
   companyName,
+  companyCnpj,
   destination,
   scheduledDate,
   arrivalTime,
@@ -43,7 +45,7 @@ const RouteResults = ({
     try {
       const payload = {
         trip: {
-          company: companyName || "",
+          company: companyCnpj || "",
           requester: solicitante || "",
           requesterPhone: phone || "",
           scheduledDate: scheduledDate || "",

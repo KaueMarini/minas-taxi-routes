@@ -9,14 +9,16 @@ import { CalendarIcon, Building2 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import CompanySelector from "./CompanySelector";
 
 interface TripFormProps {
   arrivalTime: string;
   setArrivalTime: (v: string) => void;
   destination: string;
   setDestination: (v: string) => void;
+  companyCnpj: string;
   companyName: string;
-  setCompanyName: (v: string) => void;
+  onCompanySelect: (cnpj: string, name: string) => void;
   date: Date | undefined;
   setDate: (d: Date | undefined) => void;
   returnTime: string;
@@ -32,7 +34,7 @@ interface TripFormProps {
 const TripForm = ({
   arrivalTime, setArrivalTime,
   destination, setDestination,
-  companyName, setCompanyName,
+  companyCnpj, companyName, onCompanySelect,
   date, setDate,
   returnTime, setReturnTime,
   payment, setPayment,
@@ -48,10 +50,7 @@ const TripForm = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-1.5">
-          <Label htmlFor="company">Nome da Empresa</Label>
-          <Input id="company" placeholder="Ex: 284 – Delp Engenharia" value={companyName} onChange={(e) => setCompanyName(e.target.value)} />
-        </div>
+        <CompanySelector selectedCnpj={companyCnpj} onSelect={onCompanySelect} />
         <div className="space-y-1.5">
           <Label htmlFor="dest">Endereço de Destino</Label>
           <Input id="dest" placeholder="Av. das Nações, 999 - Distrito Industrial - Vespasiano/MG" value={destination} onChange={(e) => setDestination(e.target.value)} />

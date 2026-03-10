@@ -18,12 +18,18 @@ const Dashboard = () => {
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [arrivalTime, setArrivalTime] = useState("08:00");
   const [destination, setDestination] = useState("");
+  const [companyCnpj, setCompanyCnpj] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [date, setDate] = useState<Date>();
   const [returnTime, setReturnTime] = useState("");
   const [payment, setPayment] = useState("");
   const [solicitante, setSolicitante] = useState("");
   const [phone, setPhone] = useState("");
+
+  const handleCompanySelect = useCallback((cnpj: string, name: string) => {
+    setCompanyCnpj(cnpj);
+    setCompanyName(name);
+  }, []);
 
   const handleFileParsed = useCallback((parsed: Passenger[]) => {
     setPassengers(parsed);
@@ -44,6 +50,7 @@ const Dashboard = () => {
         })),
         destination,
         companyName,
+        companyCnpj,
         arrivalTime,
         returnTime,
         payment,
@@ -136,7 +143,7 @@ const Dashboard = () => {
             <TripForm
               arrivalTime={arrivalTime} setArrivalTime={setArrivalTime}
               destination={destination} setDestination={setDestination}
-              companyName={companyName} setCompanyName={setCompanyName}
+              companyCnpj={companyCnpj} companyName={companyName} onCompanySelect={handleCompanySelect}
               date={date} setDate={setDate}
               returnTime={returnTime} setReturnTime={setReturnTime}
               payment={payment} setPayment={setPayment}
@@ -172,6 +179,7 @@ const Dashboard = () => {
               routes={routes}
               isOptimizing={isOptimizing}
               companyName={companyName}
+              companyCnpj={companyCnpj}
               destination={destination}
               scheduledDate={scheduledDate}
               arrivalTime={arrivalTime}
