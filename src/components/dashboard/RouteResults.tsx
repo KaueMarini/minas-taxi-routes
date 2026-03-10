@@ -45,7 +45,7 @@ const RouteResults = ({
     try {
       const payload = {
         trip: {
-          company: companyName || "",
+          company: companyCnpj || "",
           requester: solicitante || "",
           requesterPhone: phone || "",
           scheduledDate: scheduledDate || "",
