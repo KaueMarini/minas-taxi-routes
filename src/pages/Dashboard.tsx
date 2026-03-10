@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Car, LogOut, Map } from "lucide-react";
 import { toast } from "sonner";
@@ -12,7 +12,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 const Dashboard = () => {
-  const navigate = useNavigate();
+  const { session, signOut } = useAuth();
   const [passengers, setPassengers] = useState<Passenger[]>([]);
   const [routes, setRoutes] = useState<RouteCard[]>([]);
   const [isOptimizing, setIsOptimizing] = useState(false);
@@ -129,7 +129,7 @@ const Dashboard = () => {
             <span className="hidden text-sm text-muted-foreground sm:inline">
               Olá, <strong className="text-foreground">Operador</strong>
             </span>
-            <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground" onClick={() => navigate("/")}>
+            <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground" onClick={signOut}>
               <LogOut className="h-4 w-4" />
               <span className="hidden sm:inline">Sair</span>
             </Button>

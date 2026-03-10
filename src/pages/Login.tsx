@@ -4,15 +4,29 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { Car, LogIn } from "lucide-react";
+import { Car, LogIn, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const Login = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!email || !password) {
+      toast.error("Preencha e-mail e senha.");
+      return;
+    }
+    setLoading(true);
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      toast.error("E-mail ou senha inválidos.");
+      setLoading(false);
+      return;
+    }
     navigate("/dashboard");
   };
 
@@ -56,9 +70,9 @@ const Login = () => {
                 className="h-11"
               />
             </div>
-            <Button type="submit" className="h-11 w-full gap-2 text-base font-semibold">
-              <LogIn className="h-4 w-4" />
-              Entrar
+            <Button type="submit" className="h-11 w-full gap-2 text-base font-semibold" disabled={loading}>
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogIn className="h-4 w-4" />}
+              {loading ? "Entrando..." : "Entrar"}
             </Button>
           </form>
         </CardContent>
