@@ -9,6 +9,7 @@ interface RouteResultsProps {
   routes: RouteCard[];
   isOptimizing: boolean;
   companyName: string;
+  companyCnpj: string;
   destination: string;
   scheduledDate?: string;
   arrivalTime: string;
