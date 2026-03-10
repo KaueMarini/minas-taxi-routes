@@ -1,14 +1,21 @@
-import { useState, useMemo } from "react";
-import { Company, loadCompanies, addCompany } from "@/lib/companies";
+import { useState, useMemo, useEffect } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Building2, ChevronsUpDown, Check, Plus } from "lucide-react";
+import { Building2, ChevronsUpDown, Check, Plus, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+
+interface Company {
+  id: string;
+  code: string;
+  name: string;
+  cnpj: string;
+}
 
 interface CompanySelectorProps {
   selectedCnpj: string;
@@ -16,19 +23,41 @@ interface CompanySelectorProps {
 }
 
 const CompanySelector = ({ selectedCnpj, onSelect }: CompanySelectorProps) => {
-  const [companies, setCompanies] = useState<Company[]>(loadCompanies);
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [newName, setNewName] = useState("");
   const [newCnpj, setNewCnpj] = useState("");
   const [newCode, setNewCode] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    fetchCompanies();
+  }, []);
+
+  const fetchCompanies = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("companies")
+      .select("id, code, name, cnpj")
+      .order("name");
+
+    if (error) {
+      console.error("Erro ao carregar empresas:", error);
+      toast.error("Erro ao carregar lista de empresas.");
+    } else {
+      setCompanies(data || []);
+    }
+    setLoading(false);
+  };
 
   const selected = useMemo(
     () => companies.find((c) => c.cnpj === selectedCnpj),
     [companies, selectedCnpj]
   );
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!newName.trim() || !newCnpj.trim()) {
       toast.error("Preencha o nome e o CNPJ.");
       return;
@@ -37,18 +66,35 @@ const CompanySelector = ({ selectedCnpj, onSelect }: CompanySelectorProps) => {
       toast.error("CNPJ já cadastrado.");
       return;
     }
-    const updated = addCompany(companies, {
-      code: newCode.trim() || "0",
-      name: newName.trim().toUpperCase(),
-      cnpj: newCnpj.trim(),
-    });
-    setCompanies(updated);
-    onSelect(newCnpj.trim(), newName.trim().toUpperCase());
-    setNewName("");
-    setNewCnpj("");
-    setNewCode("");
-    setDialogOpen(false);
-    toast.success("Empresa cadastrada com sucesso!");
+
+    setSaving(true);
+    const { data, error } = await supabase
+      .from("companies")
+      .insert({
+        code: newCode.trim() || "0",
+        name: newName.trim().toUpperCase(),
+        cnpj: newCnpj.trim(),
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Erro ao cadastrar empresa:", error);
+      toast.error("Erro ao cadastrar empresa.");
+    } else if (data) {
+      setCompanies((prev) =>
+        [...prev, { id: data.id, code: data.code, name: data.name, cnpj: data.cnpj }].sort((a, b) =>
+          a.name.localeCompare(b.name)
+        )
+      );
+      onSelect(data.cnpj, data.name);
+      setNewName("");
+      setNewCnpj("");
+      setNewCode("");
+      setDialogOpen(false);
+      toast.success("Empresa cadastrada com sucesso!");
+    }
+    setSaving(false);
   };
 
   return (
@@ -61,8 +107,14 @@ const CompanySelector = ({ selectedCnpj, onSelect }: CompanySelectorProps) => {
             role="combobox"
             aria-expanded={open}
             className="w-full justify-between font-normal"
+            disabled={loading}
           >
-            {selected ? (
+            {loading ? (
+              <span className="flex items-center gap-2 text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Carregando...
+              </span>
+            ) : selected ? (
               <span className="truncate">
                 {selected.code} – {selected.name}
               </span>
@@ -143,7 +195,9 @@ const CompanySelector = ({ selectedCnpj, onSelect }: CompanySelectorProps) => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
-            <Button onClick={handleAdd}>Cadastrar</Button>
+            <Button onClick={handleAdd} disabled={saving}>
+              {saving ? "Salvando..." : "Cadastrar"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
