@@ -178,6 +178,7 @@ const Dashboard = () => {
               routes={routes}
               isOptimizing={isOptimizing}
               companyName={companyName}
+              companyCnpj={companyCnpj}
               destination={destination}
               scheduledDate={scheduledDate}
               arrivalTime={arrivalTime}

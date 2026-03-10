@@ -30,6 +30,7 @@ const RouteResults = ({
   routes,
   isOptimizing,
   companyName,
+  companyCnpj,
   destination,
   scheduledDate,
   arrivalTime,
