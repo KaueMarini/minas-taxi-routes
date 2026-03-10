@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Car, LogOut, Map } from "lucide-react";
 import { toast } from "sonner";
