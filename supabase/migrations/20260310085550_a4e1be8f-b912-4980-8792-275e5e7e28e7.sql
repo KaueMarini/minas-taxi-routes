@@ -1,0 +1,43 @@
+-- Create companies table
+CREATE TABLE public.companies (
+  id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+  code TEXT NOT NULL DEFAULT '0',
+  name TEXT NOT NULL,
+  cnpj TEXT NOT NULL UNIQUE,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
+);
+
+-- Enable RLS
+ALTER TABLE public.companies ENABLE ROW LEVEL SECURITY;
+
+-- Allow anyone to read companies
+CREATE POLICY "Anyone can view companies"
+  ON public.companies FOR SELECT
+  USING (true);
+
+-- Allow anyone to insert companies
+CREATE POLICY "Anyone can insert companies"
+  ON public.companies FOR INSERT
+  WITH CHECK (true);
+
+-- Seed initial data
+INSERT INTO public.companies (code, name, cnpj) VALUES
+  ('6016', 'ADRA MINAS', '16.524.054/0002-77'),
+  ('301', 'BIO - RAD LABORATÓRIOS BRASIL LTDA', '03.188.198/0001-77'),
+  ('6010', 'CLAMPER INDUSTRIA E COMERCIO S.A.', '66.429.895/0001-92'),
+  ('291', 'CSN', '08.902.291/0001-15'),
+  ('284', 'DELP ENGENHARIA MECANICA S.A', '17.161.936/0008-73'),
+  ('215', 'DIAMED LATINO AMERICA S/A', '71.015.853/0001-45'),
+  ('287', 'CNF - GOL AEROPORTO - VRG LINHAS AEREAS', '07.575.651/0030-93'),
+  ('285', 'CNF - GOL HANGAR - VRG LINHAS AEREAS', '07.575.651/0036-89'),
+  ('320', 'INSTITUTO HERMES PARDINI S/A', '19.378.769/0001-76'),
+  ('6017', 'TECNOKOR / KOCH', '02.572.696/0001-56'),
+  ('296', 'KOMATSU', '02.336.124/0008-44'),
+  ('226', 'LABTEST', '16.516.296/0001-38'),
+  ('1201', 'LIASA', '17.221.771/0011-83'),
+  ('1005', 'COOPERATIVA MINAS TAXI', '04.925.740/0001-90'),
+  ('225', 'SIMPLEX EQUIPAMENTOS LTDA', '21.470.224/0001-37'),
+  ('1011', 'SUPORTE INFORMATICA', '32.592.616/0001-95'),
+  ('1004', 'TAP TRANSPORTES AEREOS PORTUGUESES SA', '33.136.896/0009-47'),
+  ('228', 'TOTAL LINHAS AEREAS', '32.068.363/0002-36'),
+  ('390', 'VMI SISTEMAS DE SEGURANÇA LTDA', '05.293.074/0001-87');
