@@ -2,7 +2,8 @@ import { useState, useCallback } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Car, LogOut, Map, Sparkles } from "lucide-react";
+import { LogOut, Map, Sparkles } from "lucide-react";
+import logo from "@/assets/logo.png";
 import { toast } from "sonner";
 import TripForm from "@/components/dashboard/TripForm";
 import FileUpload from "@/components/dashboard/FileUpload";
@@ -119,12 +120,10 @@ const Dashboard = () => {
       <header className="sticky top-0 z-30 border-b bg-card/90 backdrop-blur-xl">
         <div className="mx-auto flex h-14 max-w-[1440px] items-center justify-between px-4 md:px-8">
           <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary shadow-sm">
-              <Car className="h-4 w-4 text-primary-foreground" />
-            </div>
+            <img src={logo} alt="Minas Táxi" className="h-8 w-8 rounded-lg shadow-sm" />
             <div className="flex items-center gap-2">
               <span className="font-display text-lg font-bold text-foreground">
-                Minas Taxi
+                Minas Táxi
               </span>
               <Badge variant="secondary" className="hidden text-[10px] font-medium sm:inline-flex">
                 Painel de Rotas

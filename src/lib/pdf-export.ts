@@ -41,13 +41,22 @@ export function generateRoutesPDF(routes: RouteCard[], opts: PDFOptions) {
   // Header
   doc.setFillColor(...gold);
   doc.rect(0, 0, pageW, 28, "F");
+
+  // Add logo
+  try {
+    const logoUrl = window.location.origin + "/images/logo.png";
+    doc.addImage(logoUrl, "PNG", margin, 2, 24, 24);
+  } catch {
+    // fallback if image fails
+  }
+
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(18);
   doc.setFont("helvetica", "bold");
-  doc.text("MINAS TAXI", margin, 13);
+  doc.text("MINAS TÁXI", margin + 28, 13);
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
-  doc.text("Relatório de Rotas Otimizadas", margin, 20);
+  doc.text("Relatório de Rotas Otimizadas", margin + 28, 20);
 
   const dateStr = opts.scheduledDate || new Date().toLocaleDateString("pt-BR");
   doc.text(dateStr, pageW - margin, 13, { align: "right" });

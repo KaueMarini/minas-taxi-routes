@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { Car, LogIn, Loader2 } from "lucide-react";
+import { LogIn, Loader2 } from "lucide-react";
+import logo from "@/assets/logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -31,11 +32,9 @@ const Login = () => {
       <Card className="relative z-10 w-full max-w-sm animate-fade-in border shadow-lg">
         <CardContent className="p-8">
           <div className="mb-8 text-center">
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary shadow-md">
-              <Car className="h-7 w-7 text-primary-foreground" />
-            </div>
+            <img src={logo} alt="Minas Táxi" className="mx-auto mb-1 h-20 w-20 rounded-2xl shadow-md" />
             <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">
-              Minas Taxi
+              Minas Táxi
             </h1>
             <p className="mt-1 text-xs text-muted-foreground">
               Painel de Inteligência de Rotas
