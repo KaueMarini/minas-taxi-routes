@@ -50,10 +50,7 @@ const TripForm = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-1.5">
-          <Label htmlFor="company">Nome da Empresa</Label>
-          <Input id="company" placeholder="Ex: 284 – Delp Engenharia" value={companyName} onChange={(e) => setCompanyName(e.target.value)} />
-        </div>
+        <CompanySelector selectedCnpj={companyCnpj} onSelect={onCompanySelect} />
         <div className="space-y-1.5">
           <Label htmlFor="dest">Endereço de Destino</Label>
           <Input id="dest" placeholder="Av. das Nações, 999 - Distrito Industrial - Vespasiano/MG" value={destination} onChange={(e) => setDestination(e.target.value)} />
