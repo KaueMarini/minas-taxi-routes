@@ -50,6 +50,7 @@ const Dashboard = () => {
         })),
         destination,
         companyName,
+        companyCnpj,
         arrivalTime,
         returnTime,
         payment,
