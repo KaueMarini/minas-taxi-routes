@@ -1,7 +1,8 @@
 import { useState, useCallback } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { Car, LogOut, Map } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Car, LogOut, Map, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import TripForm from "@/components/dashboard/TripForm";
 import FileUpload from "@/components/dashboard/FileUpload";
@@ -74,7 +75,6 @@ const Dashboard = () => {
 
       const data = await response.json();
 
-      // Aceita array, objeto com .routes, ou objeto único
       if (Array.isArray(data)) {
         setRoutes(data as RouteCard[]);
       } else if (data.routes && Array.isArray(data.routes)) {
@@ -91,7 +91,7 @@ const Dashboard = () => {
     } finally {
       setIsOptimizing(false);
     }
-  }, [passengers, arrivalTime, destination, companyName, returnTime, payment, solicitante, phone, date]);
+  }, [passengers, arrivalTime, destination, companyName, companyCnpj, returnTime, payment, solicitante, phone, date]);
 
   const handleDeletePassenger = useCallback((id: string) => {
     setPassengers((prev) => prev.filter((p) => p.id !== id));
@@ -115,31 +115,49 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-30 border-b bg-card/80 backdrop-blur-md">
-        <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between px-4 md:px-8">
+      {/* Header */}
+      <header className="sticky top-0 z-30 border-b bg-card/90 backdrop-blur-xl">
+        <div className="mx-auto flex h-14 max-w-[1440px] items-center justify-between px-4 md:px-8">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-              <Car className="h-5 w-5 text-primary-foreground" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary shadow-sm">
+              <Car className="h-4 w-4 text-primary-foreground" />
             </div>
-            <span className="font-display text-xl font-bold text-foreground">
-              Minas Taxi
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="font-display text-lg font-bold text-foreground">
+                Minas Taxi
+              </span>
+              <Badge variant="secondary" className="hidden text-[10px] font-medium sm:inline-flex">
+                Painel de Rotas
+              </Badge>
+            </div>
           </div>
-          <div className="flex items-center gap-4">
-            <span className="hidden text-sm text-muted-foreground sm:inline">
-              Olá, <strong className="text-foreground">Operador</strong>
+          <div className="flex items-center gap-3">
+            <span className="hidden text-xs text-muted-foreground sm:inline">
+              {session?.user?.email}
             </span>
-            <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground" onClick={signOut}>
-              <LogOut className="h-4 w-4" />
+            <Button variant="ghost" size="sm" className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-foreground" onClick={signOut}>
+              <LogOut className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Sair</span>
             </Button>
           </div>
         </div>
       </header>
 
+      {/* Main */}
       <main className="mx-auto max-w-[1440px] px-4 py-6 md:px-8 md:py-8">
-        <div className="grid gap-8 lg:grid-cols-[1fr_1fr]">
-          <div className="space-y-6">
+        {/* Page title */}
+        <div className="mb-6 animate-fade-in">
+          <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">
+            Otimização de Rotas
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Importe passageiros, configure a viagem e gere rotas otimizadas com inteligência artificial.
+          </p>
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-[1fr_1fr] lg:gap-8">
+          {/* Left column */}
+          <div className="space-y-5 animate-slide-up">
             <TripForm
               arrivalTime={arrivalTime} setArrivalTime={setArrivalTime}
               destination={destination} setDestination={setDestination}
@@ -164,17 +182,22 @@ const Dashboard = () => {
 
             {passengers.length > 0 && (
               <Button
-                className="h-12 w-full gap-2 text-base font-semibold animate-pulse-gold"
+                className="h-12 w-full gap-2.5 text-base font-semibold shadow-md animate-pulse-gold transition-all hover:shadow-lg"
                 onClick={handleOptimize}
                 disabled={isOptimizing}
               >
-                <Map className="h-5 w-5" />
+                {isOptimizing ? (
+                  <Map className="h-5 w-5 animate-spin" />
+                ) : (
+                  <Sparkles className="h-5 w-5" />
+                )}
                 {isOptimizing ? "Analisando endereços e calculando rotas..." : "Otimizar Rotas com IA"}
               </Button>
             )}
           </div>
 
-          <div>
+          {/* Right column */}
+          <div className="animate-slide-up" style={{ animationDelay: "0.1s" }}>
             <RouteResults
               routes={routes}
               isOptimizing={isOptimizing}

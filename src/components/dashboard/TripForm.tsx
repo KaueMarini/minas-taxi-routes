@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon, Building2 } from "lucide-react";
+import { CalendarIcon, Building2, MapPin, User, Phone, Clock, CreditCard } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -42,33 +42,47 @@ const TripForm = ({
   phone, setPhone,
 }: TripFormProps) => {
   return (
-    <Card>
-      <CardHeader className="pb-4">
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <Building2 className="h-5 w-5 text-primary" />
+    <Card className="shadow-sm">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10">
+            <Building2 className="h-4 w-4 text-primary" />
+          </div>
           Dados da Viagem
         </CardTitle>
       </CardHeader>
       <CardContent className="grid gap-4 sm:grid-cols-2">
         <CompanySelector selectedCnpj={companyCnpj} onSelect={onCompanySelect} />
         <div className="space-y-1.5">
-          <Label htmlFor="dest">Endereço de Destino</Label>
-          <Input id="dest" placeholder="Av. das Nações, 999 - Distrito Industrial - Vespasiano/MG" value={destination} onChange={(e) => setDestination(e.target.value)} />
+          <Label htmlFor="dest" className="flex items-center gap-1.5 text-xs">
+            <MapPin className="h-3 w-3 text-muted-foreground" />
+            Endereço de Destino
+          </Label>
+          <Input id="dest" placeholder="Av. das Nações, 999 - Vespasiano/MG" value={destination} onChange={(e) => setDestination(e.target.value)} className="h-9" />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="solicitante">Solicitante</Label>
-          <Input id="solicitante" placeholder="Nome do solicitante" value={solicitante} onChange={(e) => setSolicitante(e.target.value)} />
+          <Label htmlFor="solicitante" className="flex items-center gap-1.5 text-xs">
+            <User className="h-3 w-3 text-muted-foreground" />
+            Solicitante
+          </Label>
+          <Input id="solicitante" placeholder="Nome do solicitante" value={solicitante} onChange={(e) => setSolicitante(e.target.value)} className="h-9" />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="phone">Telefone de Contato</Label>
-          <Input id="phone" placeholder="(31) 99999-0000" value={phone} onChange={(e) => setPhone(e.target.value)} />
+          <Label htmlFor="phone" className="flex items-center gap-1.5 text-xs">
+            <Phone className="h-3 w-3 text-muted-foreground" />
+            Telefone de Contato
+          </Label>
+          <Input id="phone" placeholder="(31) 99999-0000" value={phone} onChange={(e) => setPhone(e.target.value)} className="h-9" />
         </div>
         <div className="space-y-1.5">
-          <Label>Data do Agendamento</Label>
+          <Label className="flex items-center gap-1.5 text-xs">
+            <CalendarIcon className="h-3 w-3 text-muted-foreground" />
+            Data do Agendamento
+          </Label>
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !date && "text-muted-foreground")}>
-                <CalendarIcon className="mr-2 h-4 w-4" />
+              <Button variant="outline" className={cn("h-9 w-full justify-start text-left font-normal", !date && "text-muted-foreground")}>
+                <CalendarIcon className="mr-2 h-3.5 w-3.5" />
                 {date ? format(date, "dd/MM/yyyy", { locale: ptBR }) : "Selecione a data"}
               </Button>
             </PopoverTrigger>
@@ -78,17 +92,26 @@ const TripForm = ({
           </Popover>
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="arrival">Horário de Chegada</Label>
-          <Input id="arrival" type="time" value={arrivalTime} onChange={(e) => setArrivalTime(e.target.value)} />
+          <Label htmlFor="arrival" className="flex items-center gap-1.5 text-xs">
+            <Clock className="h-3 w-3 text-muted-foreground" />
+            Horário de Chegada
+          </Label>
+          <Input id="arrival" type="time" value={arrivalTime} onChange={(e) => setArrivalTime(e.target.value)} className="h-9" />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="return">Horário de Retorno <span className="text-muted-foreground">(opcional)</span></Label>
-          <Input id="return" type="time" value={returnTime} onChange={(e) => setReturnTime(e.target.value)} />
+          <Label htmlFor="return" className="flex items-center gap-1.5 text-xs">
+            <Clock className="h-3 w-3 text-muted-foreground" />
+            Retorno <span className="text-muted-foreground">(opcional)</span>
+          </Label>
+          <Input id="return" type="time" value={returnTime} onChange={(e) => setReturnTime(e.target.value)} className="h-9" />
         </div>
         <div className="space-y-1.5">
-          <Label>Forma de Pagamento</Label>
+          <Label className="flex items-center gap-1.5 text-xs">
+            <CreditCard className="h-3 w-3 text-muted-foreground" />
+            Forma de Pagamento
+          </Label>
           <Select value={payment} onValueChange={setPayment}>
-            <SelectTrigger>
+            <SelectTrigger className="h-9">
               <SelectValue placeholder="Selecione" />
             </SelectTrigger>
             <SelectContent>
