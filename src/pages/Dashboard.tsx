@@ -142,7 +142,7 @@ const Dashboard = () => {
             <TripForm
               arrivalTime={arrivalTime} setArrivalTime={setArrivalTime}
               destination={destination} setDestination={setDestination}
-              companyName={companyName} setCompanyName={setCompanyName}
+              companyCnpj={companyCnpj} companyName={companyName} onCompanySelect={handleCompanySelect}
               date={date} setDate={setDate}
               returnTime={returnTime} setReturnTime={setReturnTime}
               payment={payment} setPayment={setPayment}
