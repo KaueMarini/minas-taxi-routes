@@ -129,7 +129,7 @@ const Dashboard = () => {
             <span className="hidden text-sm text-muted-foreground sm:inline">
               Olá, <strong className="text-foreground">Operador</strong>
             </span>
-            <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground" onClick={() => navigate("/")}>
+            <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground" onClick={signOut}>
               <LogOut className="h-4 w-4" />
               <span className="hidden sm:inline">Sair</span>
             </Button>
