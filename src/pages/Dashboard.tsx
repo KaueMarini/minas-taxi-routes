@@ -108,7 +108,7 @@ const Dashboard = () => {
     const newId = String(Date.now());
     setPassengers((prev) => [
       ...prev,
-      { id: newId, name: "", address: "", phone: "", costCenter: "" },
+      { id: newId, name: "", address: "", phone: "", costCenter: "", re: "" },
     ]);
   }, []);
 
