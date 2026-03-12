@@ -16,6 +16,7 @@ function normalizeHeader(h: string): keyof Passenger | null {
   if (["endereço", "endereco", "address", "endereço completo"].includes(lower)) return "address";
   if (["celular", "telefone", "phone", "fone", "tel"].includes(lower)) return "phone";
   if (["centro de custo", "costcenter", "cost center", "cc", "centro custo"].includes(lower)) return "costCenter";
+  if (["re", "registro", "nº centro de custo", "n centro de custo", "nº cc"].includes(lower)) return "re";
   return null;
 }
 
