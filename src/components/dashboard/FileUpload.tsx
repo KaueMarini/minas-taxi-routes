@@ -29,11 +29,12 @@ function parseRows(rows: Record<string, string>[]): Passenger[] {
 
   return rows
     .map((row, i) => {
-      const p: Passenger = { id: String(Date.now() + i), name: "", address: "", phone: "", costCenter: "" };
+      const p: Passenger = { id: String(Date.now() + i), name: "", address: "", phone: "", costCenter: "", re: "" };
       if (usePositional) {
         const vals = Object.values(row);
         p.name = String(vals[0] ?? ""); p.address = String(vals[1] ?? "");
         p.phone = String(vals[2] ?? ""); p.costCenter = String(vals[3] ?? "");
+        p.re = String(vals[4] ?? "");
       } else {
         for (const [col, field] of Object.entries(mapping)) p[field] = String(row[col] ?? "");
       }
