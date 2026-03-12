@@ -38,6 +38,7 @@ const PassengerTable = ({ passengers, onDelete, onUpdate, onAdd }: PassengerTabl
                 <TableHead className="min-w-[200px] text-xs">Endereço</TableHead>
                 <TableHead className="min-w-[130px] text-xs">Celular</TableHead>
                 <TableHead className="min-w-[100px] text-xs">Centro de Custo</TableHead>
+                <TableHead className="min-w-[100px] text-xs">RE</TableHead>
                 <TableHead className="w-10" />
               </TableRow>
             </TableHeader>
