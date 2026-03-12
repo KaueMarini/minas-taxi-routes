@@ -38,6 +38,7 @@ const PassengerTable = ({ passengers, onDelete, onUpdate, onAdd }: PassengerTabl
                 <TableHead className="min-w-[200px] text-xs">Endereço</TableHead>
                 <TableHead className="min-w-[130px] text-xs">Celular</TableHead>
                 <TableHead className="min-w-[100px] text-xs">Centro de Custo</TableHead>
+                <TableHead className="min-w-[100px] text-xs">RE</TableHead>
                 <TableHead className="w-10" />
               </TableRow>
             </TableHeader>
@@ -58,6 +59,10 @@ const PassengerTable = ({ passengers, onDelete, onUpdate, onAdd }: PassengerTabl
                   </TableCell>
                   <TableCell className="p-1">
                     <Input value={p.costCenter} onChange={(e) => onUpdate(p.id, "costCenter", e.target.value)}
+                      className="h-8 border-transparent bg-transparent text-sm hover:border-input focus:border-input" />
+                  </TableCell>
+                  <TableCell className="p-1">
+                    <Input value={p.re} onChange={(e) => onUpdate(p.id, "re", e.target.value)}
                       className="h-8 border-transparent bg-transparent text-sm hover:border-input focus:border-input" />
                   </TableCell>
                   <TableCell className="p-1">

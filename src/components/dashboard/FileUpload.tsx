@@ -16,6 +16,7 @@ function normalizeHeader(h: string): keyof Passenger | null {
   if (["endereço", "endereco", "address", "endereço completo"].includes(lower)) return "address";
   if (["celular", "telefone", "phone", "fone", "tel"].includes(lower)) return "phone";
   if (["centro de custo", "costcenter", "cost center", "cc", "centro custo"].includes(lower)) return "costCenter";
+  if (["re", "registro", "nº centro de custo", "n centro de custo", "nº cc"].includes(lower)) return "re";
   return null;
 }
 
@@ -28,11 +29,12 @@ function parseRows(rows: Record<string, string>[]): Passenger[] {
 
   return rows
     .map((row, i) => {
-      const p: Passenger = { id: String(Date.now() + i), name: "", address: "", phone: "", costCenter: "" };
+      const p: Passenger = { id: String(Date.now() + i), name: "", address: "", phone: "", costCenter: "", re: "" };
       if (usePositional) {
         const vals = Object.values(row);
         p.name = String(vals[0] ?? ""); p.address = String(vals[1] ?? "");
         p.phone = String(vals[2] ?? ""); p.costCenter = String(vals[3] ?? "");
+        p.re = String(vals[4] ?? "");
       } else {
         for (const [col, field] of Object.entries(mapping)) p[field] = String(row[col] ?? "");
       }
@@ -44,8 +46,8 @@ function parseRows(rows: Record<string, string>[]): Passenger[] {
 async function parseFile(file: File): Promise<Passenger[]> {
   const ext = file.name.split(".").pop()?.toLowerCase();
   if (ext === "csv") {
-    const text = await file.text();
-    const wb = XLSX.read(text, { type: "string" });
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, { codepage: 28591 });
     return parseRows(XLSX.utils.sheet_to_json<Record<string, string>>(wb.Sheets[wb.SheetNames[0]], { defval: "" }));
   }
   if (["xlsx", "xls"].includes(ext || "")) {

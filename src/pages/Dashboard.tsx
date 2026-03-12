@@ -49,6 +49,7 @@ const Dashboard = () => {
           address: p.address,
           phone: p.phone,
           costCenter: p.costCenter,
+          re: p.re,
         })),
         destination,
         companyName,
@@ -108,7 +109,7 @@ const Dashboard = () => {
     const newId = String(Date.now());
     setPassengers((prev) => [
       ...prev,
-      { id: newId, name: "", address: "", phone: "", costCenter: "" },
+      { id: newId, name: "", address: "", phone: "", costCenter: "", re: "" },
     ]);
   }, []);
 
