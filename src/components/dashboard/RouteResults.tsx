@@ -54,6 +54,7 @@ const RouteResults = ({
             passengerId: i + 1, sequence: (i + 1) * 2 - 1,
             name: p.name, phone: p.phone || "",
             passenger_cost_center: p.costCenter || "",
+            re: p.re || "",
             pickup: { address: p.address },
           })),
           destinations: route.passengers.map((p, i) => ({

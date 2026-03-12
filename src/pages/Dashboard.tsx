@@ -49,6 +49,7 @@ const Dashboard = () => {
           address: p.address,
           phone: p.phone,
           costCenter: p.costCenter,
+          re: p.re,
         })),
         destination,
         companyName,

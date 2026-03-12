@@ -4,6 +4,7 @@ export interface Passenger {
   address: string;
   phone: string;
   costCenter: string;
+  re: string;
 }
 
 export interface RouteCard {

@@ -45,8 +45,8 @@ function parseRows(rows: Record<string, string>[]): Passenger[] {
 async function parseFile(file: File): Promise<Passenger[]> {
   const ext = file.name.split(".").pop()?.toLowerCase();
   if (ext === "csv") {
-    const text = await file.text();
-    const wb = XLSX.read(text, { type: "string" });
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, { codepage: 28591 });
     return parseRows(XLSX.utils.sheet_to_json<Record<string, string>>(wb.Sheets[wb.SheetNames[0]], { defval: "" }));
   }
   if (["xlsx", "xls"].includes(ext || "")) {

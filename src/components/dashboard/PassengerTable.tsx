@@ -62,6 +62,10 @@ const PassengerTable = ({ passengers, onDelete, onUpdate, onAdd }: PassengerTabl
                       className="h-8 border-transparent bg-transparent text-sm hover:border-input focus:border-input" />
                   </TableCell>
                   <TableCell className="p-1">
+                    <Input value={p.re} onChange={(e) => onUpdate(p.id, "re", e.target.value)}
+                      className="h-8 border-transparent bg-transparent text-sm hover:border-input focus:border-input" />
+                  </TableCell>
+                  <TableCell className="p-1">
                     <Button variant="ghost" size="icon"
                       className="h-7 w-7 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 hover:text-destructive"
                       onClick={() => onDelete(p.id)}>
