@@ -11,13 +11,30 @@ interface FileUploadProps {
 }
 
 function normalizeHeader(h: string): keyof Passenger | null {
-  const lower = h.toLowerCase().trim();
+  const lower = h
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[°º]/g, "o")
+    .replace(/\s+/g, " ")
+    .trim();
+
   if (["nome", "name", "passageiro"].includes(lower)) return "name";
-  if (["endereço", "endereco", "address", "endereço completo"].includes(lower)) return "address";
+  if (["endereco", "address", "endereco completo"].includes(lower)) return "address";
   if (["celular", "telefone", "phone", "fone", "tel"].includes(lower)) return "phone";
   if (["centro de custo", "costcenter", "cost center", "cc", "centro custo"].includes(lower)) return "costCenter";
-  if (["re", "registro", "nº centro de custo", "n centro de custo", "nº cc"].includes(lower)) return "re";
+  if (["re", "registro", "no centro de custo", "no cc", "numero centro de custo"].includes(lower)) return "re";
   return null;
+}
+
+function sanitizeCell(value: unknown): string {
+  return String(value ?? "")
+    .replace(/\u00A0/g, " ") // non-breaking space
+    .replace(/[\u0080-\u009F]/g, " ") // control chars comuns de CSV CP1252 mal interpretado
+    .replace(/[\u2013\u2014\u2212]/g, "-") // traços especiais
+    .replace(/\s*-\s*/g, " - ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function parseRows(rows: Record<string, string>[]): Passenger[] {
@@ -32,11 +49,11 @@ function parseRows(rows: Record<string, string>[]): Passenger[] {
       const p: Passenger = { id: String(Date.now() + i), name: "", address: "", phone: "", costCenter: "", re: "" };
       if (usePositional) {
         const vals = Object.values(row);
-        p.name = String(vals[0] ?? ""); p.address = String(vals[1] ?? "");
-        p.phone = String(vals[2] ?? ""); p.costCenter = String(vals[3] ?? "");
-        p.re = String(vals[4] ?? "");
+        p.name = sanitizeCell(vals[0]); p.address = sanitizeCell(vals[1]);
+        p.phone = sanitizeCell(vals[2]); p.costCenter = sanitizeCell(vals[3]);
+        p.re = sanitizeCell(vals[4]);
       } else {
-        for (const [col, field] of Object.entries(mapping)) p[field] = String(row[col] ?? "");
+        for (const [col, field] of Object.entries(mapping)) p[field] = sanitizeCell(row[col]);
       }
       return p;
     })
@@ -47,12 +64,17 @@ async function parseFile(file: File): Promise<Passenger[]> {
   const ext = file.name.split(".").pop()?.toLowerCase();
   if (ext === "csv") {
     const buf = await file.arrayBuffer();
-    const wb = XLSX.read(buf, { codepage: 28591 });
+
+    const utf8Text = new TextDecoder("utf-8").decode(buf);
+    const looksBroken = /[\u0080-\u009F]|�|Ã|Â/.test(utf8Text);
+    const csvText = looksBroken ? new TextDecoder("windows-1252").decode(buf) : utf8Text;
+
+    const wb = XLSX.read(csvText, { type: "string" });
     return parseRows(XLSX.utils.sheet_to_json<Record<string, string>>(wb.Sheets[wb.SheetNames[0]], { defval: "" }));
   }
   if (["xlsx", "xls"].includes(ext || "")) {
     const buf = await file.arrayBuffer();
-    const wb = XLSX.read(buf);
+    const wb = XLSX.read(buf, { codepage: 1252 });
     return parseRows(XLSX.utils.sheet_to_json<Record<string, string>>(wb.Sheets[wb.SheetNames[0]], { defval: "" }));
   }
   throw new Error("Formato não suportado. Use CSV ou Excel.");
