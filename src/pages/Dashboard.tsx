@@ -2,7 +2,7 @@ import { useState, useCallback } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { LogOut, Map, Sparkles } from "lucide-react";
+import { LogOut } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { toast } from "sonner";
 import TripForm from "@/components/dashboard/TripForm";
@@ -17,7 +17,6 @@ const Dashboard = () => {
   const { session, signOut } = useAuth();
   const [passengers, setPassengers] = useState<Passenger[]>([]);
   const [routes, setRoutes] = useState<RouteCard[]>([]);
-  const [isOptimizing, setIsOptimizing] = useState(false);
   const [arrivalTime, setArrivalTime] = useState("08:00");
   const [destination, setDestination] = useState("");
   const [companyCnpj, setCompanyCnpj] = useState("");
@@ -33,9 +32,9 @@ const Dashboard = () => {
     setCompanyName(name);
   }, []);
 
-  const buildRoutesFromCars = useCallback((passengers: Passenger[], arrTime: string): RouteCard[] => {
+  const buildRoutesFromCars = useCallback((parsed: Passenger[], arrTime: string): RouteCard[] => {
     const groups: Record<string, Passenger[]> = {};
-    passengers.forEach((p) => {
+    parsed.forEach((p) => {
       const car = p.car || "Sem Carro";
       if (!groups[car]) groups[car] = [];
       groups[car].push(p);
@@ -65,72 +64,10 @@ const Dashboard = () => {
 
   const handleFileParsed = useCallback((parsed: Passenger[]) => {
     setPassengers(parsed);
-    const hasCars = parsed.some((p) => p.car && p.car.trim() !== "");
-    if (hasCars) {
-      const generatedRoutes = buildRoutesFromCars(parsed, arrivalTime);
-      setRoutes(generatedRoutes);
-      toast.success(`${generatedRoutes.length} rota(s) gerada(s) a partir do arquivo!`);
-    } else {
-      setRoutes([]);
-    }
+    const generatedRoutes = buildRoutesFromCars(parsed, arrivalTime);
+    setRoutes(generatedRoutes);
+    toast.success(`${parsed.length} passageiro(s) em ${generatedRoutes.length} carro(s)!`);
   }, [arrivalTime, buildRoutesFromCars]);
-
-  const handleOptimize = useCallback(async () => {
-    if (passengers.length === 0) return;
-    setIsOptimizing(true);
-    try {
-      const payload = {
-        passengers: passengers.map((p) => ({
-          id: p.id,
-          name: p.name,
-          address: p.address,
-          phone: p.phone,
-          costCenter: p.costCenter,
-          re: p.re,
-        })),
-        destination,
-        companyName,
-        companyCnpj,
-        arrivalTime,
-        returnTime,
-        payment,
-        solicitante,
-        phone,
-        scheduledDate: date ? format(date, "yyyy-MM-dd") : undefined,
-      };
-
-      const response = await fetch(
-        "https://webhook.saveautomatik.shop/webhook/TaxiOtimizarRotas",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`Erro no webhook: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      if (Array.isArray(data)) {
-        setRoutes(data as RouteCard[]);
-      } else if (data.routes && Array.isArray(data.routes)) {
-        setRoutes(data.routes as RouteCard[]);
-      } else if (data.id && data.passengers) {
-        setRoutes([data as RouteCard]);
-      } else {
-        console.warn("Formato de resposta não reconhecido:", data);
-        toast.error("Formato de resposta do servidor não reconhecido.");
-      }
-    } catch (error) {
-      console.error("Erro ao chamar webhook:", error);
-      toast.error("Erro ao otimizar rotas. Verifique a conexão com o servidor.");
-    } finally {
-      setIsOptimizing(false);
-    }
-  }, [passengers, arrivalTime, destination, companyName, companyCnpj, returnTime, payment, solicitante, phone, date]);
 
   const handleDeletePassenger = useCallback((id: string) => {
     setPassengers((prev) => prev.filter((p) => p.id !== id));
@@ -146,7 +83,7 @@ const Dashboard = () => {
     const newId = String(Date.now());
     setPassengers((prev) => [
       ...prev,
-      { id: newId, name: "", address: "", phone: "", costCenter: "", re: "" },
+      { id: newId, name: "", address: "", phone: "", costCenter: "", re: "", car: "" },
     ]);
   }, []);
 
@@ -154,7 +91,6 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="sticky top-0 z-30 border-b bg-card/90 backdrop-blur-xl">
         <div className="mx-auto flex h-14 max-w-[1440px] items-center justify-between px-4 md:px-8">
           <div className="flex items-center gap-3">
@@ -180,20 +116,17 @@ const Dashboard = () => {
         </div>
       </header>
 
-      {/* Main */}
       <main className="mx-auto max-w-[1440px] px-4 py-6 md:px-8 md:py-8">
-        {/* Page title */}
         <div className="mb-6 animate-fade-in">
           <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">
-            Otimização de Rotas
+            Gerenciamento de Rotas
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Importe passageiros, configure a viagem e gere rotas otimizadas com inteligência artificial.
+            Importe passageiros com os carros definidos e gerencie as rotas.
           </p>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[1fr_1fr] lg:gap-8">
-          {/* Left column */}
           <div className="space-y-5 animate-slide-up">
             <TripForm
               arrivalTime={arrivalTime} setArrivalTime={setArrivalTime}
@@ -216,28 +149,12 @@ const Dashboard = () => {
                 onAdd={handleAddPassenger}
               />
             )}
-
-            {passengers.length > 0 && !passengers.some((p) => p.car && p.car.trim() !== "") && (
-              <Button
-                className="h-12 w-full gap-2.5 text-base font-semibold shadow-md animate-pulse-gold transition-all hover:shadow-lg"
-                onClick={handleOptimize}
-                disabled={isOptimizing}
-              >
-                {isOptimizing ? (
-                  <Map className="h-5 w-5 animate-spin" />
-                ) : (
-                  <Sparkles className="h-5 w-5" />
-                )}
-                {isOptimizing ? "Analisando endereços e calculando rotas..." : "Otimizar Rotas com IA"}
-              </Button>
-            )}
           </div>
 
-          {/* Right column */}
           <div className="animate-slide-up" style={{ animationDelay: "0.1s" }}>
             <RouteResults
               routes={routes}
-              isOptimizing={isOptimizing}
+              isOptimizing={false}
               companyName={companyName}
               companyCnpj={companyCnpj}
               destination={destination}
