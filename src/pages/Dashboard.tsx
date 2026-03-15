@@ -33,10 +33,47 @@ const Dashboard = () => {
     setCompanyName(name);
   }, []);
 
+  const buildRoutesFromCars = useCallback((passengers: Passenger[], arrTime: string): RouteCard[] => {
+    const groups: Record<string, Passenger[]> = {};
+    passengers.forEach((p) => {
+      const car = p.car || "Sem Carro";
+      if (!groups[car]) groups[car] = [];
+      groups[car].push(p);
+    });
+
+    const sortedKeys = Object.keys(groups).sort((a, b) => {
+      const numA = parseInt(a.replace(/\D/g, "")) || 0;
+      const numB = parseInt(b.replace(/\D/g, "")) || 0;
+      return numA - numB;
+    });
+
+    return sortedKeys.map((carName, idx) => {
+      const carPassengers = groups[carName];
+      const vehicleNumber = parseInt(carName.replace(/\D/g, "")) || idx + 1;
+      return {
+        id: `car-${vehicleNumber}`,
+        vehicleNumber,
+        routeName: carName,
+        passengers: carPassengers,
+        departureTime: "",
+        pickupTimes: carPassengers.map(() => ""),
+        arrivalTime: arrTime,
+        estimatedTravelTime: "",
+      };
+    });
+  }, []);
+
   const handleFileParsed = useCallback((parsed: Passenger[]) => {
     setPassengers(parsed);
-    setRoutes([]);
-  }, []);
+    const hasCars = parsed.some((p) => p.car && p.car.trim() !== "");
+    if (hasCars) {
+      const generatedRoutes = buildRoutesFromCars(parsed, arrivalTime);
+      setRoutes(generatedRoutes);
+      toast.success(`${generatedRoutes.length} rota(s) gerada(s) a partir do arquivo!`);
+    } else {
+      setRoutes([]);
+    }
+  }, [arrivalTime, buildRoutesFromCars]);
 
   const handleOptimize = useCallback(async () => {
     if (passengers.length === 0) return;
