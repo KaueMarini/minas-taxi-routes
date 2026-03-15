@@ -10,7 +10,7 @@ interface FileUploadProps {
   hasPassengers: boolean;
 }
 
-function normalizeHeader(h: string): keyof Passenger | null {
+function normalizeHeader(h: string): keyof Passenger | "car" | null {
   const lower = h
     .toLowerCase()
     .normalize("NFD")
@@ -24,6 +24,7 @@ function normalizeHeader(h: string): keyof Passenger | null {
   if (["celular", "telefone", "phone", "fone", "tel"].includes(lower)) return "phone";
   if (["centro de custo", "costcenter", "cost center", "cc", "centro custo"].includes(lower)) return "costCenter";
   if (["re", "registro", "no centro de custo", "no cc", "numero centro de custo"].includes(lower)) return "re";
+  if (["carro", "car", "veiculo", "vehiculo"].includes(lower)) return "car";
   return null;
 }
 
