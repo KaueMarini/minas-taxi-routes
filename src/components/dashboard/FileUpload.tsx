@@ -41,21 +41,27 @@ function sanitizeCell(value: unknown): string {
 function parseRows(rows: Record<string, string>[]): Passenger[] {
   if (rows.length === 0) return [];
   const headers = Object.keys(rows[0]);
-  const mapping: Record<string, keyof Passenger> = {};
+  const mapping: Record<string, keyof Passenger | "car"> = {};
   headers.forEach((h) => { const mapped = normalizeHeader(h); if (mapped) mapping[h] = mapped; });
   const usePositional = Object.keys(mapping).length === 0;
 
   return rows
     .map((row, i) => {
-      const p: Passenger = { id: String(Date.now() + i), name: "", address: "", phone: "", costCenter: "", re: "" };
+      const p: Passenger = { id: String(Date.now() + i), name: "", address: "", phone: "", costCenter: "", re: "", car: "" };
       if (usePositional) {
         const vals = Object.values(row);
         p.name = sanitizeCell(vals[0]); p.address = sanitizeCell(vals[1]);
         p.phone = sanitizeCell(vals[2]); p.costCenter = sanitizeCell(vals[3]);
         p.re = sanitizeCell(vals[4]);
       } else {
-        for (const [col, field] of Object.entries(mapping)) p[field] = sanitizeCell(row[col]);
+        for (const [col, field] of Object.entries(mapping)) {
+          (p as any)[field] = sanitizeCell(row[col]);
+        }
       }
+      // Clean phone: remove ".0" suffix from numeric imports
+      p.phone = p.phone.replace(/\.0$/, "");
+      // Clean RE: remove ".0" suffix
+      p.re = p.re.replace(/\.0$/, "");
       return p;
     })
     .filter((p) => p.name.trim() !== "");
