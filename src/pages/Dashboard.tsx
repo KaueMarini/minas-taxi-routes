@@ -217,7 +217,7 @@ const Dashboard = () => {
               />
             )}
 
-            {passengers.length > 0 && (
+            {passengers.length > 0 && !passengers.some((p) => p.car && p.car.trim() !== "") && (
               <Button
                 className="h-12 w-full gap-2.5 text-base font-semibold shadow-md animate-pulse-gold transition-all hover:shadow-lg"
                 onClick={handleOptimize}
