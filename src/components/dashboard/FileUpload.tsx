@@ -10,30 +10,54 @@ interface FileUploadProps {
   hasPassengers: boolean;
 }
 
-function normalizeHeader(h: string): keyof Passenger | "car" | null {
-  const lower = h
+function normalizeColumnName(name: string): string {
+  return String(name ?? "")
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[°º]/g, "o")
-    .replace(/\s+/g, " ")
+    .replace(/[_\s]+/g, " ")
     .trim();
+}
 
-  if (["nome", "name", "passageiro"].includes(lower)) return "name";
-  if (["endereco", "address", "endereco completo"].includes(lower)) return "address";
-  if (["celular", "telefone", "phone", "fone", "tel"].includes(lower)) return "phone";
-  if (["centro de custo", "costcenter", "cost center", "cc", "centro custo"].includes(lower)) return "costCenter";
-  if (["re", "registro", "no centro de custo", "no cc", "numero centro de custo"].includes(lower)) return "re";
-  if (["carro", "car", "veiculo", "vehiculo"].includes(lower)) return "car";
+type FieldKey = "name" | "address" | "phone" | "costCenter" | "re" | "car";
+
+const fieldAliases: Record<FieldKey, string[]> = {
+  name: ["nome", "name", "passageiro"],
+  address: ["endereco", "address", "endereco completo", "end"],
+  phone: ["celular", "telefone", "phone", "fone", "tel"],
+  costCenter: ["centro de custo", "costcenter", "cost center", "cc", "centro custo"],
+  re: ["re", "registro", "no centro de custo", "no cc", "numero centro de custo"],
+  car: ["carro", "car", "veiculo", "vehiculo", "vehicle"],
+};
+
+function findFieldForHeader(header: string): FieldKey | null {
+  const normalized = normalizeColumnName(header);
+  if (!normalized) return null;
+
+  // Priority 1: Exact match
+  for (const [field, aliases] of Object.entries(fieldAliases)) {
+    if (aliases.some((a) => normalizeColumnName(a) === normalized)) return field as FieldKey;
+  }
+
+  // Priority 2: Starts with
+  for (const [field, aliases] of Object.entries(fieldAliases)) {
+    if (aliases.some((a) => normalized.startsWith(normalizeColumnName(a)))) return field as FieldKey;
+  }
+
+  // Priority 3: Contains
+  for (const [field, aliases] of Object.entries(fieldAliases)) {
+    if (aliases.some((a) => normalized.includes(normalizeColumnName(a)))) return field as FieldKey;
+  }
+
   return null;
 }
 
 function sanitizeCell(value: unknown): string {
   return String(value ?? "")
-    .replace(/\u00A0/g, " ") // non-breaking space
-    .replace(/[\u0080-\u009F]/g, " ") // control chars comuns de CSV CP1252 mal interpretado
-    .replace(/[\u2013\u2014\u2212]/g, "-") // traços especiais
-    .replace(/\s*-\s*/g, " - ")
+    .replace(/\u00A0/g, " ")
+    .replace(/[\u0080-\u009F]/g, " ")
+    .replace(/[\u2013\u2014\u2212]/g, "-")
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -41,26 +65,28 @@ function sanitizeCell(value: unknown): string {
 function parseRows(rows: Record<string, string>[]): Passenger[] {
   if (rows.length === 0) return [];
   const headers = Object.keys(rows[0]);
-  const mapping: Record<string, keyof Passenger | "car"> = {};
-  headers.forEach((h) => { const mapped = normalizeHeader(h); if (mapped) mapping[h] = mapped; });
-  const usePositional = Object.keys(mapping).length === 0;
+
+  // Build mapping using flexible matching
+  const mapping: Record<string, FieldKey> = {};
+  const usedFields = new Set<FieldKey>();
+  headers.forEach((h) => {
+    const field = findFieldForHeader(h);
+    if (field && !usedFields.has(field)) {
+      mapping[h] = field;
+      usedFields.add(field);
+    }
+  });
+
+  console.log("Detected column mapping:", mapping);
 
   return rows
     .map((row, i) => {
       const p: Passenger = { id: String(Date.now() + i), name: "", address: "", phone: "", costCenter: "", re: "", car: "" };
-      if (usePositional) {
-        const vals = Object.values(row);
-        p.name = sanitizeCell(vals[0]); p.address = sanitizeCell(vals[1]);
-        p.phone = sanitizeCell(vals[2]); p.costCenter = sanitizeCell(vals[3]);
-        p.re = sanitizeCell(vals[4]);
-      } else {
-        for (const [col, field] of Object.entries(mapping)) {
-          (p as any)[field] = sanitizeCell(row[col]);
-        }
+      for (const [col, field] of Object.entries(mapping)) {
+        (p as any)[field] = sanitizeCell(row[col]);
       }
-      // Clean phone: remove ".0" suffix from numeric imports
+      // Clean phone/RE: remove ".0" suffix from numeric imports
       p.phone = p.phone.replace(/\.0$/, "");
-      // Clean RE: remove ".0" suffix
       p.re = p.re.replace(/\.0$/, "");
       return p;
     })
@@ -71,11 +97,9 @@ async function parseFile(file: File): Promise<Passenger[]> {
   const ext = file.name.split(".").pop()?.toLowerCase();
   if (ext === "csv") {
     const buf = await file.arrayBuffer();
-
     const utf8Text = new TextDecoder("utf-8").decode(buf);
     const looksBroken = /[\u0080-\u009F]|�|Ã|Â/.test(utf8Text);
     const csvText = looksBroken ? new TextDecoder("windows-1252").decode(buf) : utf8Text;
-
     const wb = XLSX.read(csvText, { type: "string" });
     return parseRows(XLSX.utils.sheet_to_json<Record<string, string>>(wb.Sheets[wb.SheetNames[0]], { defval: "" }));
   }
