@@ -50,11 +50,13 @@ const RouteResults = ({
           vehicleNumber: route.vehicleNumber,
           routeName: route.routeName,
           payment: payment || "",
+          serviceTime: route.passengers[0]?.serviceTime || "",
           passengers: route.passengers.map((p, i) => ({
             passengerId: i + 1, sequence: (i + 1) * 2 - 1,
             name: p.name, phone: p.phone || "",
             passenger_cost_center: p.costCenter || "",
             re: p.re || "",
+            serviceTime: p.serviceTime || "",
             pickup: { address: p.address },
           })),
           destinations: route.passengers.map((p, i) => ({
