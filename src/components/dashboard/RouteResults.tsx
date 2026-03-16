@@ -194,6 +194,9 @@ const RouteResults = ({
             <div className="mb-3 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
               <span><strong className="text-foreground">Empresa:</strong> {companyName || "—"}</span>
               {scheduledDate && <span><strong className="text-foreground">Data:</strong> {scheduledDate}</span>}
+              {route.passengers[0]?.serviceTime && (
+                <span><strong className="text-foreground">Horário de Atendimento:</strong> {route.passengers[0].serviceTime}h</span>
+              )}
               <span>
                 <strong className="text-foreground">Partida:</strong> {route.departureTime}h →{" "}
                 <strong className="text-foreground">Chegada:</strong> {route.arrivalTime}h{" "}

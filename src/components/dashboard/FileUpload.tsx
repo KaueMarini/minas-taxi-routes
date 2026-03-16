@@ -82,7 +82,7 @@ function parseRows(rows: Record<string, string>[]): Passenger[] {
 
   return rows
     .map((row, i) => {
-      const p: Passenger = { id: String(Date.now() + i), name: "", address: "", phone: "", costCenter: "", re: "", car: "" };
+      const p: Passenger = { id: String(Date.now() + i), name: "", address: "", phone: "", costCenter: "", re: "", car: "", serviceTime: "" };
       for (const [col, field] of Object.entries(mapping)) {
         (p as any)[field] = sanitizeCell(row[col]);
       }
