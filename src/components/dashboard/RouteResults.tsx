@@ -86,11 +86,13 @@ const RouteResults = ({
 
   const buildRouteText = (route: RouteCard) => {
     const costCenters = route.passengers.map((p) => p.costCenter).filter(Boolean).join(" / ");
+    const serviceTime = route.passengers[0]?.serviceTime;
     return [
       `🚕 *CARRO ${route.vehicleNumber} - ${route.routeName}*`, "",
       `Empresa: ${companyName || "[A preencher]"}`,
       `Fone: ${phone || "[A preencher]"}`,
-      `Solicitante: ${solicitante || "[A preencher]"}`, "",
+      `Solicitante: ${solicitante || "[A preencher]"}`,
+      serviceTime ? `Horário de Atendimento: ${serviceTime}h` : "", "",
       `*Passageiros e Origens (Ordem de embarque):*`, "",
       ...route.passengers.map((p, i) =>
         `${i + 1}. ${p.name} - ${p.address}${p.phone ? `\n   📱 ${p.phone}` : ""}`
