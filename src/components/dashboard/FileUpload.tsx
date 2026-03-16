@@ -99,7 +99,8 @@ async function parseFile(file: File): Promise<Passenger[]> {
   if (ext === "csv") {
     const buf = await file.arrayBuffer();
     const utf8Text = new TextDecoder("utf-8").decode(buf);
-    const looksBroken = /[\u0080-\u009F]|�|Ã|Â/.test(utf8Text);
+    // Detect mojibake: sequences like "Ã§" (ç), "Ã£" (ã), "Ã©" (é) indicate windows-1252 read as UTF-8
+    const looksBroken = /�|Ã§|Ã£|Ã©|Ã¡|Ãº|Ã³|Ã­|Ã‰|Ã‡|Ã"|Ã¢|Ãª|Ã´/.test(utf8Text);
     const csvText = looksBroken ? new TextDecoder("windows-1252").decode(buf) : utf8Text;
     const wb = XLSX.read(csvText, { type: "string" });
     return parseRows(XLSX.utils.sheet_to_json<Record<string, string>>(wb.Sheets[wb.SheetNames[0]], { defval: "" }));
