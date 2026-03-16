@@ -6,6 +6,7 @@ export interface Passenger {
   costCenter: string;
   re: string;
   car?: string;
+  serviceTime?: string;
 }
 
 export interface RouteCard {

@@ -50,11 +50,13 @@ const RouteResults = ({
           vehicleNumber: route.vehicleNumber,
           routeName: route.routeName,
           payment: payment || "",
+          serviceTime: route.passengers[0]?.serviceTime || "",
           passengers: route.passengers.map((p, i) => ({
             passengerId: i + 1, sequence: (i + 1) * 2 - 1,
             name: p.name, phone: p.phone || "",
             passenger_cost_center: p.costCenter || "",
             re: p.re || "",
+            serviceTime: p.serviceTime || "",
             pickup: { address: p.address },
           })),
           destinations: route.passengers.map((p, i) => ({
@@ -84,11 +86,13 @@ const RouteResults = ({
 
   const buildRouteText = (route: RouteCard) => {
     const costCenters = route.passengers.map((p) => p.costCenter).filter(Boolean).join(" / ");
+    const serviceTime = route.passengers[0]?.serviceTime;
     return [
       `🚕 *CARRO ${route.vehicleNumber} - ${route.routeName}*`, "",
       `Empresa: ${companyName || "[A preencher]"}`,
       `Fone: ${phone || "[A preencher]"}`,
-      `Solicitante: ${solicitante || "[A preencher]"}`, "",
+      `Solicitante: ${solicitante || "[A preencher]"}`,
+      serviceTime ? `Horário de Atendimento: ${serviceTime}h` : "", "",
       `*Passageiros e Origens (Ordem de embarque):*`, "",
       ...route.passengers.map((p, i) =>
         `${i + 1}. ${p.name} - ${p.address}${p.phone ? `\n   📱 ${p.phone}` : ""}`
@@ -192,6 +196,9 @@ const RouteResults = ({
             <div className="mb-3 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
               <span><strong className="text-foreground">Empresa:</strong> {companyName || "—"}</span>
               {scheduledDate && <span><strong className="text-foreground">Data:</strong> {scheduledDate}</span>}
+              {route.passengers[0]?.serviceTime && (
+                <span><strong className="text-foreground">Horário de Atendimento:</strong> {route.passengers[0].serviceTime}h</span>
+              )}
               <span>
                 <strong className="text-foreground">Partida:</strong> {route.departureTime}h →{" "}
                 <strong className="text-foreground">Chegada:</strong> {route.arrivalTime}h{" "}
