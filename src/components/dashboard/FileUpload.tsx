@@ -20,7 +20,7 @@ function normalizeColumnName(name: string): string {
     .trim();
 }
 
-type FieldKey = "name" | "address" | "phone" | "costCenter" | "re" | "car";
+type FieldKey = "name" | "address" | "phone" | "costCenter" | "re" | "car" | "serviceTime";
 
 const fieldAliases: Record<FieldKey, string[]> = {
   name: ["nome", "name", "passageiro"],
@@ -29,6 +29,7 @@ const fieldAliases: Record<FieldKey, string[]> = {
   costCenter: ["centro de custo", "costcenter", "cost center", "cc", "centro custo"],
   re: ["re", "registro", "no centro de custo", "no cc", "numero centro de custo"],
   car: ["carro", "car", "veiculo", "vehiculo", "vehicle"],
+  serviceTime: ["horario de atendimento", "horario atendimento", "hora atendimento", "service time"],
 };
 
 function findFieldForHeader(header: string): FieldKey | null {
