@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -64,10 +64,18 @@ const Dashboard = () => {
 
   const handleFileParsed = useCallback((parsed: Passenger[]) => {
     setPassengers(parsed);
-    const generatedRoutes = buildRoutesFromCars(parsed, arrivalTime);
-    setRoutes(generatedRoutes);
-    toast.success(`${parsed.length} passageiro(s) em ${generatedRoutes.length} carro(s)!`);
-  }, [arrivalTime, buildRoutesFromCars]);
+    toast.success(`${parsed.length} passageiro(s) importado(s)!`);
+  }, []);
+
+  // Rebuild routes whenever passengers or arrivalTime change
+  useEffect(() => {
+    if (passengers.length > 0) {
+      const generatedRoutes = buildRoutesFromCars(passengers, arrivalTime);
+      setRoutes(generatedRoutes);
+    } else {
+      setRoutes([]);
+    }
+  }, [passengers, arrivalTime, buildRoutesFromCars]);
 
   const handleDeletePassenger = useCallback((id: string) => {
     setPassengers((prev) => prev.filter((p) => p.id !== id));
