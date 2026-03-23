@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,7 +16,6 @@ import { ptBR } from "date-fns/locale";
 const Dashboard = () => {
   const { session, signOut } = useAuth();
   const [passengers, setPassengers] = useState<Passenger[]>([]);
-  const [routes, setRoutes] = useState<RouteCard[]>([]);
   const [arrivalTime, setArrivalTime] = useState("08:00");
   const [destination, setDestination] = useState("");
   const [companyCnpj, setCompanyCnpj] = useState("");
@@ -67,14 +66,12 @@ const Dashboard = () => {
     toast.success(`${parsed.length} passageiro(s) importado(s)!`);
   }, []);
 
-  // Rebuild routes whenever passengers or arrivalTime change
-  useEffect(() => {
-    if (passengers.length > 0) {
-      const generatedRoutes = buildRoutesFromCars(passengers, arrivalTime);
-      setRoutes(generatedRoutes);
-    } else {
-      setRoutes([]);
+  const routes = useMemo<RouteCard[]>(() => {
+    if (passengers.length === 0) {
+      return [];
     }
+
+    return buildRoutesFromCars(passengers, arrivalTime);
   }, [passengers, arrivalTime, buildRoutesFromCars]);
 
   const handleDeletePassenger = useCallback((id: string) => {
