@@ -2,7 +2,7 @@ import { useState, useCallback, useMemo } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { LogOut } from "lucide-react";
+import { LogOut, X } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { toast } from "sonner";
 import TripForm from "@/components/dashboard/TripForm";
@@ -92,7 +92,33 @@ const Dashboard = () => {
     ]);
   }, []);
 
+  const handleResetAll = useCallback(() => {
+    setPassengers([]);
+    setArrivalTime("08:00");
+    setDestination("");
+    setCompanyCnpj("");
+    setCompanyName("");
+    setDate(undefined);
+    setReturnTime("");
+    setPayment("");
+    setSolicitante("");
+    setPhone("");
+    toast.success("Tudo limpo! Você já pode solicitar outra corrida.");
+  }, []);
+
   const scheduledDate = date ? format(date, "dd/MM/yyyy", { locale: ptBR }) : undefined;
+  const hasTripData = Boolean(
+    passengers.length ||
+    destination ||
+    companyCnpj ||
+    companyName ||
+    date ||
+    returnTime ||
+    payment ||
+    solicitante ||
+    phone ||
+    arrivalTime !== "08:00"
+  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -122,13 +148,28 @@ const Dashboard = () => {
       </header>
 
       <main className="mx-auto max-w-[1440px] px-4 py-6 md:px-8 md:py-8">
-        <div className="mb-6 animate-fade-in">
-          <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">
-            Gerenciamento de Rotas
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Importe passageiros com os carros definidos e gerencie as rotas.
-          </p>
+        <div className="mb-6 flex items-start justify-between gap-3 animate-fade-in">
+          <div>
+            <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">
+              Gerenciamento de Rotas
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Importe passageiros com os carros definidos e gerencie as rotas.
+            </p>
+          </div>
+
+          {hasTripData && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-9 shrink-0 gap-1.5 text-xs"
+              onClick={handleResetAll}
+            >
+              <X className="h-3.5 w-3.5" />
+              Limpar tudo
+            </Button>
+          )}
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[1fr_1fr] lg:gap-8">
@@ -165,6 +206,7 @@ const Dashboard = () => {
               destination={destination}
               scheduledDate={scheduledDate}
               arrivalTime={arrivalTime}
+              returnTime={returnTime}
               payment={payment}
               solicitante={solicitante}
               phone={phone}

@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { RouteCard } from "@/lib/mock-data";
 import { Car, Copy, MapPin, Clock, Loader2, Navigation, Send, FileDown, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { generateRoutesPDF } from "@/lib/pdf-export";
 
 interface RouteResultsProps {
@@ -15,6 +15,7 @@ interface RouteResultsProps {
   destination: string;
   scheduledDate?: string;
   arrivalTime: string;
+  returnTime?: string;
   payment?: string;
   solicitante?: string;
   phone?: string;
@@ -29,11 +30,27 @@ const paymentLabels: Record<string, string> = {
 };
 
 const RouteResults = ({
-  routes, isOptimizing, companyName, companyCnpj,
-  destination, scheduledDate, arrivalTime, payment, solicitante, phone,
+  routes,
+  isOptimizing,
+  companyName,
+  companyCnpj,
+  destination,
+  scheduledDate,
+  arrivalTime,
+  returnTime,
+  payment,
+  solicitante,
+  phone,
 }: RouteResultsProps) => {
   const [sendingRouteId, setSendingRouteId] = useState<string | null>(null);
   const [sentRoutes, setSentRoutes] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (routes.length === 0) {
+      setSendingRouteId(null);
+      setSentRoutes(new Set());
+    }
+  }, [routes]);
 
   const sendRouteToWebhook = async (route: RouteCard) => {
     setSendingRouteId(route.id);
@@ -45,6 +62,8 @@ const RouteResults = ({
           requesterPhone: phone || "",
           scheduledDate: scheduledDate || "",
           arrivalTime: route.arrivalTime,
+          returnTime: returnTime || "",
+          horario_retorno: returnTime || "",
           departureTime: route.departureTime,
           estimatedTravelTime: route.estimatedTravelTime,
           vehicleNumber: route.vehicleNumber,
@@ -101,6 +120,7 @@ const RouteResults = ({
       costCenters ? `*Centro de Custo:* ${costCenters}` : "",
       scheduledDate ? `*Agendamento:* ${scheduledDate}` : "",
       `*Horário de Chegada:* ${route.arrivalTime}hs`,
+      returnTime ? `*Horário de Retorno:* ${returnTime}hs` : "",
       `*Horário de Partida (1º Passageiro):* ${route.departureTime}hs (Tempo est. de rota: ${route.estimatedTravelTime})`,
       payment ? `*Pagamento:* ${paymentLabels[payment] || payment}` : "",
     ].filter(Boolean).join("\n");
@@ -196,6 +216,7 @@ const RouteResults = ({
             <div className="mb-3 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
               <span><strong className="text-foreground">Empresa:</strong> {companyName || "—"}</span>
               {scheduledDate && <span><strong className="text-foreground">Data:</strong> {scheduledDate}</span>}
+              {returnTime && <span><strong className="text-foreground">Retorno:</strong> {returnTime}h</span>}
               {route.passengers[0]?.serviceTime && (
                 <span><strong className="text-foreground">Horário de Atendimento:</strong> {route.passengers[0].serviceTime}h</span>
               )}
