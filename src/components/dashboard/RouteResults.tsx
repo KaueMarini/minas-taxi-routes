@@ -273,7 +273,7 @@ const RouteResults = ({
               <Button size="sm"
                 className="h-8 flex-1 gap-1.5 text-xs shadow-sm"
                 onClick={() => sendRouteToWebhook(route)}
-                disabled={sendingRouteId === route.id || sentRoutes.has(route.id)}
+                disabled={sendingRouteId === route.id}
               >
                 {sentRoutes.has(route.id) ? (
                   <><CheckCircle2 className="h-3 w-3" /> Enviado</>
