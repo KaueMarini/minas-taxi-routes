@@ -116,9 +116,9 @@ const TripForm = ({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="Voucher">Voucher</SelectItem>
-              <SelectItem value="Pix">PIX</SelectItem>
+              <SelectItem value="Pix">Pix</SelectItem>
               <SelectItem value="Din">Dinheiro</SelectItem>
-              <SelectItem value="ONLINE_PAYMENT">Boleto Eletrônico</SelectItem>
+              <SelectItem value="ONLINE_PAYMENT">Boleto</SelectItem>
             </SelectContent>
           </Select>
         </div>
