@@ -22,11 +22,10 @@ interface RouteResultsProps {
 }
 
 const paymentLabels: Record<string, string> = {
-  faturado: "Faturado",
-  cartao: "Cartão Corporativo",
-  pix: "PIX",
-  dinheiro: "Dinheiro",
-  boleto: "Boleto",
+  Voucher: "Voucher",
+  Pix: "PIX",
+  Din: "Dinheiro",
+  ONLINE_PAYMENT: "Boleto Eletrônico",
 };
 
 const RouteResults = ({
