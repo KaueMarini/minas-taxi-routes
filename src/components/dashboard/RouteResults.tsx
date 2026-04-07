@@ -79,6 +79,7 @@ const RouteResults = ({
           vehicleNumber: route.vehicleNumber,
           routeName: route.routeName,
           payment: payment || "",
+          extra1: routeReasons[route.id] || "",
           serviceTime: route.passengers[0]?.serviceTime || "",
           passengers: route.passengers.map((p, i) => ({
             passengerId: i + 1, sequence: (i + 1) * 2 - 1,
@@ -277,7 +278,21 @@ const RouteResults = ({
               </div>
             </div>
 
-            <div className="mt-3 flex gap-1.5">
+            <div className="mt-3 space-y-2">
+              <Select
+                value={routeReasons[route.id] || ""}
+                onValueChange={(val) => setRouteReasons((prev) => ({ ...prev, [route.id]: val }))}
+              >
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="Motivo da corrida (opcional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  {MOTIVO_OPTIONS.map((m) => (
+                    <SelectItem key={m} value={m}>{m}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            <div className="flex gap-1.5">
               <Button variant="outline" size="sm" className="h-8 flex-1 gap-1.5 text-xs" onClick={() => copyRoute(route)}>
                 <Copy className="h-3 w-3" /> Copiar
               </Button>
