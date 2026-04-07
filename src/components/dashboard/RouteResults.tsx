@@ -308,7 +308,8 @@ const RouteResults = ({
                 ) : (
                   <><Send className="h-3 w-3" /> Enviar Corrida</>
                 )}
-              </Button>
+            </Button>
+            </div>
             </div>
           </CardContent>
         </Card>
