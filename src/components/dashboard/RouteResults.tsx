@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { RouteCard } from "@/lib/mock-data";
 import { Car, Copy, MapPin, Clock, Loader2, Navigation, Send, FileDown, CheckCircle2 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { generateRoutesPDF } from "@/lib/pdf-export";
@@ -43,6 +44,16 @@ const RouteResults = ({
 }: RouteResultsProps) => {
   const [sendingRouteId, setSendingRouteId] = useState<string | null>(null);
   const [sentRoutes, setSentRoutes] = useState<Set<string>>(new Set());
+  const [routeReasons, setRouteReasons] = useState<Record<string, string>>({});
+
+  const MOTIVO_OPTIONS = [
+    "2º TURNO",
+    "3º TURNO",
+    "CONVENCIONAL",
+    "H.E FDS",
+    "H.E SEMANAL",
+    "JOVEM APRENDIZ",
+  ];
 
   useEffect(() => {
     if (routes.length === 0) {
@@ -68,6 +79,7 @@ const RouteResults = ({
           vehicleNumber: route.vehicleNumber,
           routeName: route.routeName,
           payment: payment || "",
+          extra1: routeReasons[route.id] || "",
           serviceTime: route.passengers[0]?.serviceTime || "",
           passengers: route.passengers.map((p, i) => ({
             passengerId: i + 1, sequence: (i + 1) * 2 - 1,
@@ -266,7 +278,21 @@ const RouteResults = ({
               </div>
             </div>
 
-            <div className="mt-3 flex gap-1.5">
+            <div className="mt-3 space-y-2">
+              <Select
+                value={routeReasons[route.id] || ""}
+                onValueChange={(val) => setRouteReasons((prev) => ({ ...prev, [route.id]: val }))}
+              >
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="Motivo da corrida (opcional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  {MOTIVO_OPTIONS.map((m) => (
+                    <SelectItem key={m} value={m}>{m}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            <div className="flex gap-1.5">
               <Button variant="outline" size="sm" className="h-8 flex-1 gap-1.5 text-xs" onClick={() => copyRoute(route)}>
                 <Copy className="h-3 w-3" /> Copiar
               </Button>
@@ -282,7 +308,8 @@ const RouteResults = ({
                 ) : (
                   <><Send className="h-3 w-3" /> Enviar Corrida</>
                 )}
-              </Button>
+            </Button>
+            </div>
             </div>
           </CardContent>
         </Card>
