@@ -43,6 +43,16 @@ const RouteResults = ({
 }: RouteResultsProps) => {
   const [sendingRouteId, setSendingRouteId] = useState<string | null>(null);
   const [sentRoutes, setSentRoutes] = useState<Set<string>>(new Set());
+  const [routeReasons, setRouteReasons] = useState<Record<string, string>>({});
+
+  const MOTIVO_OPTIONS = [
+    "2º TURNO",
+    "3º TURNO",
+    "CONVENCIONAL",
+    "H.E FDS",
+    "H.E SEMANAL",
+    "JOVEM APRENDIZ",
+  ];
 
   useEffect(() => {
     if (routes.length === 0) {
