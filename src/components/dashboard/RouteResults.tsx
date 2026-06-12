@@ -2,11 +2,24 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { RouteCard } from "@/lib/mock-data";
-import { Car, Copy, MapPin, Clock, Loader2, Navigation, Send, FileDown, CheckCircle2 } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Car, Copy, MapPin, Clock, Loader2, Navigation, Send, FileDown, CheckCircle2, Plus, X } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectSeparator } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { generateRoutesPDF } from "@/lib/pdf-export";
+
+const DEFAULT_MOTIVOS = [
+  "2º TURNO",
+  "3º TURNO",
+  "CONVENCIONAL",
+  "H.E FDS",
+  "H.E SEMANAL",
+  "JOVEM APRENDIZ",
+  "LAGOA SANTA",
+];
+const MOTIVOS_STORAGE_KEY = "route_motivos_v1";
 
 interface RouteResultsProps {
   routes: RouteCard[];
@@ -45,15 +58,40 @@ const RouteResults = ({
   const [sendingRouteId, setSendingRouteId] = useState<string | null>(null);
   const [sentRoutes, setSentRoutes] = useState<Set<string>>(new Set());
   const [routeReasons, setRouteReasons] = useState<Record<string, string>>({});
+  const [motivos, setMotivos] = useState<string[]>(DEFAULT_MOTIVOS);
+  const [newMotivo, setNewMotivo] = useState("");
+  const [popoverOpen, setPopoverOpen] = useState(false);
 
-  const MOTIVO_OPTIONS = [
-    "2º TURNO",
-    "3º TURNO",
-    "CONVENCIONAL",
-    "H.E FDS",
-    "H.E SEMANAL",
-    "JOVEM APRENDIZ",
-  ];
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(MOTIVOS_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) setMotivos(parsed);
+      }
+    } catch {}
+  }, []);
+
+  const persistMotivos = (list: string[]) => {
+    setMotivos(list);
+    try { localStorage.setItem(MOTIVOS_STORAGE_KEY, JSON.stringify(list)); } catch {}
+  };
+
+  const addMotivo = () => {
+    const v = newMotivo.trim().toUpperCase();
+    if (!v) return;
+    if (motivos.includes(v)) {
+      toast.error("Esse motivo já existe");
+      return;
+    }
+    persistMotivos([...motivos, v]);
+    setNewMotivo("");
+    toast.success(`Motivo "${v}" adicionado`);
+  };
+
+  const removeMotivo = (m: string) => {
+    persistMotivos(motivos.filter((x) => x !== m));
+  };
 
   useEffect(() => {
     if (routes.length === 0) {
@@ -279,19 +317,53 @@ const RouteResults = ({
             </div>
 
             <div className="mt-3 space-y-2">
-              <Select
-                value={routeReasons[route.id] || ""}
-                onValueChange={(val) => setRouteReasons((prev) => ({ ...prev, [route.id]: val }))}
-              >
-                <SelectTrigger className="h-8 text-xs">
-                  <SelectValue placeholder="Motivo da corrida (opcional)" />
-                </SelectTrigger>
-                <SelectContent>
-                  {MOTIVO_OPTIONS.map((m) => (
-                    <SelectItem key={m} value={m}>{m}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex gap-1.5">
+                <Select
+                  value={routeReasons[route.id] || ""}
+                  onValueChange={(val) => setRouteReasons((prev) => ({ ...prev, [route.id]: val }))}
+                >
+                  <SelectTrigger className="h-8 flex-1 text-xs">
+                    <SelectValue placeholder="Motivo da corrida (opcional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {motivos.map((m) => (
+                      <SelectItem key={m} value={m}>{m}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-8 w-8 shrink-0 p-0" title="Gerenciar motivos">
+                      <Plus className="h-3.5 w-3.5" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-72 p-3" align="end">
+                    <p className="mb-2 text-xs font-semibold">Gerenciar motivos</p>
+                    <div className="mb-2 flex gap-1.5">
+                      <Input
+                        value={newMotivo}
+                        onChange={(e) => setNewMotivo(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addMotivo(); } }}
+                        placeholder="Novo motivo"
+                        className="h-8 text-xs"
+                      />
+                      <Button size="sm" className="h-8 px-2" onClick={addMotivo}>
+                        <Plus className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                    <div className="max-h-48 space-y-1 overflow-y-auto">
+                      {motivos.map((m) => (
+                        <div key={m} className="flex items-center justify-between rounded border px-2 py-1 text-xs">
+                          <span>{m}</span>
+                          <button onClick={() => removeMotivo(m)} className="text-muted-foreground hover:text-destructive">
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
             <div className="flex gap-1.5">
               <Button variant="outline" size="sm" className="h-8 flex-1 gap-1.5 text-xs" onClick={() => copyRoute(route)}>
                 <Copy className="h-3 w-3" /> Copiar
