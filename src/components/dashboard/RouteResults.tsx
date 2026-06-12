@@ -317,19 +317,53 @@ const RouteResults = ({
             </div>
 
             <div className="mt-3 space-y-2">
-              <Select
-                value={routeReasons[route.id] || ""}
-                onValueChange={(val) => setRouteReasons((prev) => ({ ...prev, [route.id]: val }))}
-              >
-                <SelectTrigger className="h-8 text-xs">
-                  <SelectValue placeholder="Motivo da corrida (opcional)" />
-                </SelectTrigger>
-                <SelectContent>
-                  {MOTIVO_OPTIONS.map((m) => (
-                    <SelectItem key={m} value={m}>{m}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex gap-1.5">
+                <Select
+                  value={routeReasons[route.id] || ""}
+                  onValueChange={(val) => setRouteReasons((prev) => ({ ...prev, [route.id]: val }))}
+                >
+                  <SelectTrigger className="h-8 flex-1 text-xs">
+                    <SelectValue placeholder="Motivo da corrida (opcional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {motivos.map((m) => (
+                      <SelectItem key={m} value={m}>{m}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-8 w-8 shrink-0 p-0" title="Gerenciar motivos">
+                      <Plus className="h-3.5 w-3.5" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-72 p-3" align="end">
+                    <p className="mb-2 text-xs font-semibold">Gerenciar motivos</p>
+                    <div className="mb-2 flex gap-1.5">
+                      <Input
+                        value={newMotivo}
+                        onChange={(e) => setNewMotivo(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addMotivo(); } }}
+                        placeholder="Novo motivo"
+                        className="h-8 text-xs"
+                      />
+                      <Button size="sm" className="h-8 px-2" onClick={addMotivo}>
+                        <Plus className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                    <div className="max-h-48 space-y-1 overflow-y-auto">
+                      {motivos.map((m) => (
+                        <div key={m} className="flex items-center justify-between rounded border px-2 py-1 text-xs">
+                          <span>{m}</span>
+                          <button onClick={() => removeMotivo(m)} className="text-muted-foreground hover:text-destructive">
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
             <div className="flex gap-1.5">
               <Button variant="outline" size="sm" className="h-8 flex-1 gap-1.5 text-xs" onClick={() => copyRoute(route)}>
                 <Copy className="h-3 w-3" /> Copiar
