@@ -2,11 +2,24 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { RouteCard } from "@/lib/mock-data";
-import { Car, Copy, MapPin, Clock, Loader2, Navigation, Send, FileDown, CheckCircle2 } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Car, Copy, MapPin, Clock, Loader2, Navigation, Send, FileDown, CheckCircle2, Plus, X } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectSeparator } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { generateRoutesPDF } from "@/lib/pdf-export";
+
+const DEFAULT_MOTIVOS = [
+  "2º TURNO",
+  "3º TURNO",
+  "CONVENCIONAL",
+  "H.E FDS",
+  "H.E SEMANAL",
+  "JOVEM APRENDIZ",
+  "LAGOA SANTA",
+];
+const MOTIVOS_STORAGE_KEY = "route_motivos_v1";
 
 interface RouteResultsProps {
   routes: RouteCard[];
