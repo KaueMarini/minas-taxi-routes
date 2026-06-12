@@ -58,15 +58,40 @@ const RouteResults = ({
   const [sendingRouteId, setSendingRouteId] = useState<string | null>(null);
   const [sentRoutes, setSentRoutes] = useState<Set<string>>(new Set());
   const [routeReasons, setRouteReasons] = useState<Record<string, string>>({});
+  const [motivos, setMotivos] = useState<string[]>(DEFAULT_MOTIVOS);
+  const [newMotivo, setNewMotivo] = useState("");
+  const [popoverOpen, setPopoverOpen] = useState(false);
 
-  const MOTIVO_OPTIONS = [
-    "2º TURNO",
-    "3º TURNO",
-    "CONVENCIONAL",
-    "H.E FDS",
-    "H.E SEMANAL",
-    "JOVEM APRENDIZ",
-  ];
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(MOTIVOS_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) setMotivos(parsed);
+      }
+    } catch {}
+  }, []);
+
+  const persistMotivos = (list: string[]) => {
+    setMotivos(list);
+    try { localStorage.setItem(MOTIVOS_STORAGE_KEY, JSON.stringify(list)); } catch {}
+  };
+
+  const addMotivo = () => {
+    const v = newMotivo.trim().toUpperCase();
+    if (!v) return;
+    if (motivos.includes(v)) {
+      toast.error("Esse motivo já existe");
+      return;
+    }
+    persistMotivos([...motivos, v]);
+    setNewMotivo("");
+    toast.success(`Motivo "${v}" adicionado`);
+  };
+
+  const removeMotivo = (m: string) => {
+    persistMotivos(motivos.filter((x) => x !== m));
+  };
 
   useEffect(() => {
     if (routes.length === 0) {
