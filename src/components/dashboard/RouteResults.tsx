@@ -60,7 +60,7 @@ const RouteResults = ({
   const [routeReasons, setRouteReasons] = useState<Record<string, string>>({});
   const [motivos, setMotivos] = useState<string[]>(DEFAULT_MOTIVOS);
   const [newMotivo, setNewMotivo] = useState("");
-  const [popoverOpen, setPopoverOpen] = useState(false);
+  
 
   useEffect(() => {
     try {
@@ -331,7 +331,7 @@ const RouteResults = ({
                     ))}
                   </SelectContent>
                 </Select>
-                <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+                <Popover>
                   <PopoverTrigger asChild>
                     <Button variant="outline" size="sm" className="h-8 w-8 shrink-0 p-0" title="Gerenciar motivos">
                       <Plus className="h-3.5 w-3.5" />
