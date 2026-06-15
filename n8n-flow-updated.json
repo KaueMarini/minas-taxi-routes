@@ -1,0 +1,368 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "apiTaxi2",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -304,
+        -16
+      ],
+      "id": "0bfcacb8-bc82-43fa-a681-afd81fb0b4f2",
+      "name": "Webhook",
+      "webhookId": "edcdd748-db92-4cb3-b16a-6079cc5136de"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://vm2c.taxifone.com.br:11141/rideCreate",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Basic Original.#2026"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        528,
+        -16
+      ],
+      "id": "fc74fc9b-b4d3-4701-a4d8-0d5ec3ed80e4",
+      "name": "Ride Create"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ==========================================\n// 1. MÁGICA: Tenta puxar do nome provável.\n// SE O SEU NÓ TIVER OUTRO NOME, MUDE ABAIXO:\n// ==========================================\nconst nomeDoNoDeLimpeza = \"Code in JavaScript1\";\n\nconst dadosOrganizados = $items(nomeDoNoDeLimpeza).map(i => i.json);\n\n// ==========================================\n// 2. Puxa o JSON bruto do Webhook\n// ==========================================\nconst webhook = $('Webhook').first().json.body || $('Webhook').first().json;\nconst tripInfo = webhook.trip || {};\n\n// ==========================================\n// 3. Pega os resultados do OpenCage (coordenadas + endereço estruturado)\n// ==========================================\nconst geocodeResults = $input.all();\n\n// Função para extrair os componentes estruturados de endereço (NeighborHood/City/State/CEP)\n// que agora são OBRIGATÓRIOS pela nova API\nfunction extrairComponentes(item) {\n    const result = item.json.results && item.json.results[0] ? item.json.results[0] : null;\n    const geometry = result ? result.geometry : { lat: \"\", lng: \"\" };\n    const components = result ? (result.components || {}) : {};\n\n    return {\n        lat: (geometry.lat || \"\").toString(),\n        lng: (geometry.lng || \"\").toString(),\n        neighborhood: components.neighbourhood || components.suburb || components.neighborhood || \"\",\n        city: components.city || components.town || components.municipality || components.village || \"\",\n        state: components.state_code || components.state || \"\",\n        postal_code: components.postcode || \"\"\n    };\n}\n\nlet destInfo = { lat: \"\", lng: \"\", neighborhood: \"\", city: \"\", state: \"\", postal_code: \"\" };\nconst userInfo = {};\n\n// ==========================================\n// 4. Cruza as informações pela ordem\n// (Item 0 = Destino, resto = Passageiros)\n// ==========================================\ngeocodeResults.forEach((item, index) => {\n    const info = extrairComponentes(item);\n\n    if (index === 0) {\n        destInfo = info;\n    } else {\n        const passageiroId = dadosOrganizados.filter(p => p.type === \"passageiro\")[index - 1]?.id;\n        if (passageiroId) {\n            userInfo[passageiroId] = info;\n        }\n    }\n});\n\n// ==========================================\n// 5. Montagem do tempo (Pickup Time) - CORRIGIDO (PRIORIDADE NO SERVICETIME)\n// ==========================================\nlet pickupTimeUnix = Math.floor(Date.now() / 1000);\ntry {\n    if (tripInfo.scheduledDate) {\n\n        // 1. Tenta achar primeiro o serviceTime do 1º passageiro\n        let timeString = \"\";\n        if (tripInfo.passengers && tripInfo.passengers.length > 0) {\n            timeString = tripInfo.passengers[0].serviceTime;\n        }\n\n        // Se não achar, tenta o departureTime ou arrivalTime\n        if (!timeString) {\n            timeString = tripInfo.departureTime || tripInfo.arrivalTime || \"00:00\";\n        }\n\n        let [d, m, y] = tripInfo.scheduledDate.split('/');\n        let [h, min] = timeString.split(':');\n\n        // Se não veio o ano, usa o ano atual\n        if (!y) {\n            y = new Date().getFullYear().toString();\n        } else if (y.length === 2) {\n            y = \"20\" + y; // Converte 24 para 2024 (ou 26 para 2026)\n        }\n\n        // Função rápida para garantir 2 dígitos (ex: 8 vira \"08\")\n        const pad = (num) => String(num).padStart(2, '0');\n\n        // 2. O SEGREDO DO FUSO HORÁRIO: Forçamos o UTC-3 (Horário de Brasília)\n        // Formato: \"YYYY-MM-DDTHH:mm:00-03:00\"\n        const dataIsoBRT = `${y}-${pad(m)}-${pad(d)}T${pad(h || 0)}:${pad(min || 0)}:00-03:00`;\n\n        const dateObj = new Date(dataIsoBRT);\n\n        if (!isNaN(dateObj.getTime())) {\n            pickupTimeUnix = Math.floor(dateObj.getTime() / 1000);\n        }\n    }\n} catch (e) {\n    console.log(\"Erro na data: \", e);\n}\n\n// ==========================================\n// 6. Montagem dos Usuários Finais\n// (COM O RE ADICIONADO DINAMICAMENTE)\n// ==========================================\nconst finalUsers = dadosOrganizados.filter(p => p.type === \"passageiro\").map((u, index) => {\n    const info = userInfo[u.id] || { lat: \"\", lng: \"\", neighborhood: \"\", city: \"\", state: \"\", postal_code: \"\" };\n\n    // Busca o passageiro original no payload do Webhook pelo nome (ou pela posição como fallback)\n    const passageiroOriginal = tripInfo.passengers?.find(p => p.name === u.name) || tripInfo.passengers?.[index] || {};\n\n    return {\n        id: u.id,\n        sequence: (index * 2) + 1,\n        name: u.name,\n        phone: u.phone.replace(/\\D/g, \"\"), // Remove formatação do telefone\n        passenger_re: passageiroOriginal.re || \"\", // Puxando o RE dinamicamente\n        passenger_cost_center: u.costCenter,\n        pickup: {\n            address: u.original_address,\n            neighborhood: info.neighborhood,\n            city: info.city,\n            state: info.state,\n            postal_code: info.postal_code,\n            lat: info.lat,\n            lng: info.lng\n        }\n    };\n});\n\n// ==========================================\n// 7. Montagem dos Destinos Finais\n// ==========================================\nconst finalDestinations = finalUsers.map((u, index) => {\n    return {\n        passengerId: u.id,\n        sequence: (index * 2) + 2,\n        location: {\n            address: tripInfo.destinations?.[0]?.location?.address || \"\",\n            neighborhood: destInfo.neighborhood,\n            city: destInfo.city,\n            state: destInfo.state,\n            postal_code: destInfo.postal_code,\n            reference: \"\",\n            lat: destInfo.lat,\n            lng: destInfo.lng\n        }\n    };\n});\n\n// ==========================================\n// 8. RETORNO FINAL\n// (Obrigatório para o n8n enviar para o próximo nó)\n// ==========================================\nreturn {\n    partner: \"322\",\n    user: tripInfo.company?.replace(/\\D/g, \"\") || \"CNPJ_VAZIO\",\n    password: \"0104\",\n    request_id: `REQ-${Date.now()}`,\n    pickup_time: pickupTimeUnix.toString(),\n    distance: \"0\",\n    stopped_time: \"0\",\n    category: \"taxi\",\n    passengers_no: finalUsers.length,\n    send_sms: 1,\n    suitcases_no: 0,\n    requester_name: `${tripInfo.requester || ''}`,\n    extra1: $('Webhook').first().json.body.trip.extra1,\n    extra2: tripInfo.requester,\n    payment_type: $('Webhook').first().json.body.trip.payment,\n    users: finalUsers,\n    destinations: finalDestinations\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        336,
+        -16
+      ],
+      "id": "3fd8997f-28e1-4d21-a82b-c3f495d53cd2",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "url": "https://api.opencagedata.com/geocode/v1/json",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ $json.address }}"
+            },
+            {
+              "name": "key",
+              "value": "0ef07575e6194615b7496d773c6e7e9c"
+            },
+            {
+              "name": "language",
+              "value": "pt"
+            },
+            {
+              "name": "limit",
+              "value": "1"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        128,
+        -16
+      ],
+      "id": "31343fe0-c397-48f8-bc95-3784c2bee1b4",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "const payload = $input.first().json.body || $input.first().json;\nconst itemsToGeocode = [];\n\n// ==========================================\n// 1. FUNÇÃO \"LIMPA-TRILHOS\"\n// ==========================================\nfunction limparEndereco(endereco) {\n    if (!endereco) return \"\";\n    let limpo = endereco;\n    limpo = limpo.replace(/^\\d{8}[,\\s-]+/, \"\");\n    limpo = limpo.replace(/Cidade:/gi, \"\");\n    limpo = limpo.replace(/UF:/gi, \"\");\n    limpo = limpo.replace(/Estado:/gi, \"\");\n    limpo = limpo.replace(/CEP:/gi, \"\");\n    limpo = limpo.replace(/Bairro:/gi, \"\");\n    limpo = limpo.replace(/RUA - /gi, \"\");\n    limpo = limpo.replace(/AVENIDA - /gi, \"\");\n    limpo = limpo.replace(/ - Número:\\s*/gi, \", \");\n    limpo = limpo.replace(/ - BAIRRO /gi, \", \");\n    limpo = limpo.replace(/\\s+/g, \" \").trim();\n\n    if (!limpo.toLowerCase().includes(\"brasil\")) {\n        limpo = limpo + \", Minas Gerais, Brasil\";\n    }\n    return limpo.trim();\n}\n\n// O novo JSON guarda tudo dentro da caixa \"trip\"\nconst tripData = payload.trip || payload;\n\n// ==========================================\n// 2. ACHAR O DESTINO (Agora ele acha!)\n// ==========================================\nlet destinoAddress = \"\";\n\nif (tripData.destinations && tripData.destinations.length > 0 && tripData.destinations[0].location) {\n    // Pega o endereço do novo formato\n    destinoAddress = tripData.destinations[0].location.address;\n} else if (tripData.destination) {\n    // Pega se for o formato antigo\n    destinoAddress = tripData.destination;\n}\n\nif (destinoAddress) {\n    itemsToGeocode.push({\n        type: \"destino\",\n        id: 0,\n        address: limparEndereco(destinoAddress),\n        original_address: destinoAddress\n    });\n}\n\n// ==========================================\n// 3. ACHAR OS PASSAGEIROS E SALVAR OS DADOS\n// ==========================================\n// Vai direto na lista certa\nconst usersList = tripData.passengers || tripData.users || [];\n\nif (usersList.length > 0) {\n    usersList.forEach((u, index) => {\n        // A nova API usa \"pickup.address\"\n        const addressRaw = (u.pickup && u.pickup.address) ? u.pickup.address : u.address;\n\n        itemsToGeocode.push({\n            type: \"passageiro\",\n            id: u.id || u.passengerId || String(index + 1),\n            name: u.name || u.passengerName || (\"Passageiro \" + (index + 1)),\n            phone: u.phone || u.passengerPhone || \"\",\n            costCenter: u.costCenter || u.passenger_cost_center || u.cost_center || \"\",\n            original_address: addressRaw, // Guarda o texto original\n            address: limparEndereco(addressRaw) // Manda pro GPS o texto limpo\n        });\n    });\n}\n\n// Se não achar passageiros, devolve o erro formatado para o n8n\nif (itemsToGeocode.length === 0 || (itemsToGeocode.length === 1 && itemsToGeocode[0].type === \"destino\")) {\n    return [{\n        json: {\n            erro: \"Falha ao encontrar a lista de passageiros. Verifique se o JSON tem a estrutura 'trip.passengers'.\",\n            payload: payload\n        }\n    }];\n}\n\n// Devolve tudo embrulhado no \"json\" para o n8n ficar feliz\nreturn itemsToGeocode.map(item => ({ json: item }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -96,
+        -16
+      ],
+      "id": "1d8b3504-40d6-46a8-964c-ccd1cba55d80",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Puxa o JSON bruto do Webhook\nconst webhook = $('Webhook').first().json.body || $('Webhook').first().json;\nconst trip = webhook.trip || {};\nconst passengers = trip.passengers || [];\n\n// Pega a data e formata para DD-MM\nconst dataAgendamento = trip.scheduledDate || \"data informada\";\nlet dataFormatada = dataAgendamento;\nif (dataAgendamento.includes('/')) {\n    const partes = dataAgendamento.split('/');\n    dataFormatada = `${partes[0]}-${partes[1]}`;\n}\n\n// Cria a lista de nomes formatada com bullet points para a mensagem\nconst listaNomes = passengers.map(p => `* ${p.name}`).join('\\n');\n\nconst messages = [];\n\n// Roda o loop para criar as mensagens individuais\npassengers.forEach(p => {\n    if (!p.phone) return;\n\n    let foneString = p.phone.replace(/\\D/g, \"\");\n    if (foneString.length === 10 || foneString.length === 11) {\n        foneString = \"55\" + foneString;\n    }\n\n    const horaAgendamento = p.serviceTime || trip.arrivalTime || \"horário combinado\";\n    const nomeCompleto = p.name || \"Passageiro\";\n\n    // Monta o template exatamente como você pediu\n   const textoMsg = `Olá ${nomeCompleto}\\n\\nObrigado pelo contato! Sua corrida com a MINASTAXI esta agendada para o dia ${dataFormatada} às ${horaAgendamento}hs.\\n\\nPassageiros na mesma rota:\\n${listaNomes}\\n\\n🔄 Atenção: Para clientes que utilizam rota compartilhada o horário informado refere-se ao início da rota, podendo haver pequenas variações no horário de embarque conforme a sequência dos atendimentos.\\n\\nPara falar com a atendente, o WhatsApp é 31 99537-6584.\\n\\nAtenciosamente;\\nCentral de Atendimento`;\n\n    messages.push({\n        json: {\n            number: foneString,\n            text: textoMsg,\n            delay: 1500\n        }\n    });\n});\n\nreturn messages;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        704,
+        -16
+      ],
+      "id": "6f0a9f6b-de23-4fba-88cf-c804bc03205c",
+      "name": "Prepara Mensagens WPP",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://minastaxi.uazapi.com/send/text",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "token",
+              "value": "d6d5c5d9-6b43-4b6f-9b70-c22fe4f211b3"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 10000
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        880,
+        -16
+      ],
+      "id": "41a2b642-f25c-4e82-82d5-43ce7e1940f0",
+      "name": "Dispara Mensagem UAZAPI",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Puxa o JSON bruto lá do começo (Webhook)\nconst webhook = $('Webhook').first().json.body || $('Webhook').first().json;\nconst trip = webhook.trip || {};\nconst passengers = trip.passengers || [];\n\nconst dataAgendamento = trip.scheduledDate || \"data informada\";\n\n// Busca o horário de ida (priorizando o serviceTime do primeiro passageiro)\nconst horaIda = (passengers.length > 0 && passengers[0].serviceTime)\n    ? passengers[0].serviceTime\n    : (trip.arrivalTime || trip.departureTime || \"Não informado\");\n\n// Busca o horário de retorno (com aviso caso venha vazio)\nconst horaVolta = trip.returnTime || trip.horario_retorno || \"Sem retorno agendado\";\n\n// Monta uma lista com o nome de quem vai no táxi para o gestor saber\nconst listaNomes = passengers.map(p => `• ${p.name}`).join(\"\\n\");\n\n// Monta o texto do relatório para o gestor com o espaçamento correto (\\n)\nconst textoMsg = `📊 *Relatório de Agendamentos* 🚕\\n\\nNovos táxis foram solicitados para o dia *${dataAgendamento}*.\\n\\n🕐 *Horário de Ida:* ${horaIda}\\n🕢 *Horário de Retorno:* ${horaVolta}\\n\\n*Passageiros da corrida:*\\n${listaNomes}`;\n\n// ==========================================\n// ATENÇÃO: COLOQUE OS NÚMEROS DOS GESTORES AQUI\n// Lembre-se de colocar o 55 e o DDD\n// ==========================================\nconst numerosGestores = [\n    \"5531985628956\", // Gestor 1\n    \"5531999999926\"  // Gestor 2\n];\n\nconst messages = [];\n\n// Cria um envio para cada gestor\nnumerosGestores.forEach(numero => {\n    messages.push({\n        json: {\n            number: numero.trim(), // O .trim() garante que espaços acidentais não quebrem o envio\n            text: textoMsg\n        }\n    });\n});\n\nreturn messages;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1056,
+        -16
+      ],
+      "id": "1d01981c-6b32-4307-9c9b-ea2ab1aaf963",
+      "name": "Code in JavaScript5",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://minastaxi.uazapi.com/send/text",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "token",
+              "value": "d6d5c5d9-6b43-4b6f-9b70-c22fe4f211b3"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 10000
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1232,
+        -16
+      ],
+      "id": "e37ed9e7-447f-4a1b-9017-d221af496c1a",
+      "name": "Dispara Mensagem UAZAPI1",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// ==========================================\n// 1. Puxa o JSON bruto do Webhook\n// ==========================================\nconst webhook = $('Webhook').first().json.body || $('Webhook').first().json;\nconst tripInfo = webhook.trip || {};\n\n// ==========================================\n// 2. TRAVA DE SEGURANÇA (O IF MÁGICO)\n// ==========================================\n// Verifica se existe horário de volta. Se não existir, cancela a criação da volta.\nconst timeString = tripInfo.returnTime || tripInfo.horario_retorno || \"\";\n\n// Se a string estiver vazia, for null, ou for \"00:00\" (dependendo de como seu sistema manda)\nif (!timeString || timeString.trim() === \"\" || timeString === \"00:00\") {\n    console.log(\"Corrida sem horário de volta. Abortando a criação da rota de volta.\");\n    return []; // Retornar array vazio faz o n8n parar este galho do fluxo aqui.\n}\n\n// ==========================================\n// 3. Puxa os dados organizados do início\n// ==========================================\nconst nomeDoNoDeLimpeza = \"Code in JavaScript1\";\nconst dadosOrganizados = $items(nomeDoNoDeLimpeza).map(i => i.json);\n\n// ==========================================\n// 4. Pega os resultados do OpenCage EXPLÍCITO\n// ==========================================\nconst geocodeResults = $items(\"HTTP Request\").map(i => i.json);\n\n// Função para extrair os componentes estruturados de endereço (NeighborHood/City/State/CEP)\n// que agora são OBRIGATÓRIOS pela nova API\nfunction extrairComponentes(geoResult) {\n    const result = geoResult.results && geoResult.results[0] ? geoResult.results[0] : null;\n    const geometry = result ? result.geometry : { lat: \"\", lng: \"\" };\n    const components = result ? (result.components || {}) : {};\n\n    return {\n        lat: (geometry.lat || \"\").toString(),\n        lng: (geometry.lng || \"\").toString(),\n        neighborhood: components.neighbourhood || components.suburb || components.neighborhood || \"\",\n        city: components.city || components.town || components.municipality || components.village || \"\",\n        state: components.state_code || components.state || \"\",\n        postal_code: components.postcode || \"\"\n    };\n}\n\nlet destInfo = { lat: \"\", lng: \"\", neighborhood: \"\", city: \"\", state: \"\", postal_code: \"\" };\nconst userInfo = {};\n\ngeocodeResults.forEach((geoResult, index) => {\n    const info = extrairComponentes(geoResult);\n\n    if (index === 0) {\n        // O índice 0 no OpenCage foi o endereço da empresa (origem da volta)\n        destInfo = info;\n    } else {\n        const passageiroId = dadosOrganizados.filter(p => p.type === \"passageiro\")[index - 1]?.id;\n        if (passageiroId) {\n            userInfo[passageiroId] = info;\n        }\n    }\n});\n\n// ==========================================\n// 5. Montagem do tempo (Focado no Horário de Retorno)\n// ==========================================\nlet pickupTimeUnix = Math.floor(Date.now() / 1000);\ntry {\n    if (tripInfo.scheduledDate) {\n        let [d, m, y] = tripInfo.scheduledDate.split('/');\n        let [h, min] = timeString.split(':');\n\n        if (!y) y = new Date().getFullYear().toString();\n        else if (y.length === 2) y = \"20\" + y;\n\n        const pad = (num) => String(num).padStart(2, '0');\n        const dataIsoBRT = `${y}-${pad(m)}-${pad(d)}T${pad(h || 0)}:${pad(min || 0)}:00-03:00`;\n\n        const dateObj = new Date(dataIsoBRT);\n        if (!isNaN(dateObj.getTime())) {\n            pickupTimeUnix = Math.floor(dateObj.getTime() / 1000);\n        }\n    }\n} catch (e) {\n    console.log(\"Erro na data de volta: \", e);\n}\n\n// ==========================================\n// 6. INVERSÃO DOS PASSAGEIROS E ROTAS\n// ==========================================\nconst passageirosIda = dadosOrganizados.filter(p => p.type === \"passageiro\");\n// O .reverse() transforma P1, P2, P3 em P3, P2, P1\nconst passageirosVolta = [...passageirosIda].reverse();\n\nconst finalUsers = passageirosVolta.map((u, index) => {\n    const original = tripInfo.passengers?.find(p => p.name === u.name) || {};\n    return {\n        id: u.id,\n        sequence: (index * 2) + 1,\n        name: u.name,\n        phone: u.phone.replace(/\\D/g, \"\"),\n        passenger_re: original.re || \"\",\n        passenger_cost_center: u.costCenter,\n        // Na VOLTA, o passageiro embarca (pickup) na EMPRESA\n        pickup: {\n            address: tripInfo.destinations?.[0]?.location?.address || \"\",\n            neighborhood: destInfo.neighborhood,\n            city: destInfo.city,\n            state: destInfo.state,\n            postal_code: destInfo.postal_code,\n            lat: destInfo.lat,\n            lng: destInfo.lng\n        }\n    };\n});\n\nconst finalDestinations = passageirosVolta.map((u, index) => {\n    const info = userInfo[u.id] || { lat: \"\", lng: \"\", neighborhood: \"\", city: \"\", state: \"\", postal_code: \"\" };\n    return {\n        passengerId: u.id,\n        sequence: (index * 2) + 2,\n        // Na VOLTA, o passageiro desce (location) em CASA\n        location: {\n            address: u.original_address,\n            neighborhood: info.neighborhood,\n            city: info.city,\n            state: info.state,\n            postal_code: info.postal_code,\n            reference: \"\",\n            lat: info.lat,\n            lng: info.lng\n        }\n    };\n});\n\n// ==========================================\n// 7. RETORNO FINAL DA VOLTA\n// ==========================================\nreturn {\n    partner: \"322\",\n    user: tripInfo.company?.replace(/\\D/g, \"\") || \"CNPJ_VAZIO\",\n    password: \"0104\",\n    request_id: `REQ-VOLTA-${Date.now()}`,\n    pickup_time: pickupTimeUnix.toString(),\n    distance: \"0\",\n    stopped_time: \"0\",\n    category: \"taxi\",\n    passengers_no: finalUsers.length,\n    send_sms: 1,\n    suitcases_no: 0,\n    requester_name: `${tripInfo.requester || ''}`,\n    extra1: $('Webhook').first().json.body.trip.extra1,\n    extra2: tripInfo.requester,\n    payment_type: $('Webhook').first().json.body.trip.payment,\n    users: finalUsers,\n    destinations: finalDestinations,\n    tipo_rota: \"VOLTA\"\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        544,
+        -224
+      ],
+      "id": "855bddfb-0590-4300-b829-7509e986e9f5",
+      "name": "Monta Json Volta"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://vm2c.taxifone.com.br:11141/rideCreate",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Basic Original.#2026"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        736,
+        -224
+      ],
+      "id": "c724dbff-e83c-43af-b560-8b661ad8419e",
+      "name": "Ride Create1"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ride Create": {
+      "main": [
+        [
+          {
+            "node": "Prepara Mensagens WPP",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Ride Create",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Monta Json Volta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepara Mensagens WPP": {
+      "main": [
+        [
+          {
+            "node": "Dispara Mensagem UAZAPI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dispara Mensagem UAZAPI": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript5": {
+      "main": [
+        [
+          {
+            "node": "Dispara Mensagem UAZAPI1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dispara Mensagem UAZAPI1": {
+      "main": [
+        []
+      ]
+    },
+    "Monta Json Volta": {
+      "main": [
+        [
+          {
+            "node": "Ride Create1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "meta": {
+    "instanceId": "3ae2e4b46fb4734d9e69778b1a315b64eb993bc10e631df46e5ee7aec994a8cd"
+  }
+}
