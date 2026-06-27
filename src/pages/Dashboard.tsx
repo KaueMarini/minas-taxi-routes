@@ -21,6 +21,7 @@ const Dashboard = () => {
   const [companyCnpj, setCompanyCnpj] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [date, setDate] = useState<Date>();
+  const [returnDate, setReturnDate] = useState<Date>();
   const [returnTime, setReturnTime] = useState("");
   const [payment, setPayment] = useState("");
   const [solicitante, setSolicitante] = useState("");
@@ -99,6 +100,7 @@ const Dashboard = () => {
     setCompanyCnpj("");
     setCompanyName("");
     setDate(undefined);
+    setReturnDate(undefined);
     setReturnTime("");
     setPayment("");
     setSolicitante("");
@@ -107,6 +109,7 @@ const Dashboard = () => {
   }, []);
 
   const scheduledDate = date ? format(date, "dd/MM/yyyy", { locale: ptBR }) : undefined;
+  const scheduledReturnDate = returnDate ? format(returnDate, "dd/MM/yyyy", { locale: ptBR }) : scheduledDate;
   const hasTripData = Boolean(
     passengers.length ||
     destination ||
@@ -179,6 +182,7 @@ const Dashboard = () => {
               destination={destination} setDestination={setDestination}
               companyCnpj={companyCnpj} companyName={companyName} onCompanySelect={handleCompanySelect}
               date={date} setDate={setDate}
+              returnDate={returnDate} setReturnDate={setReturnDate}
               returnTime={returnTime} setReturnTime={setReturnTime}
               payment={payment} setPayment={setPayment}
               solicitante={solicitante} setSolicitante={setSolicitante}
@@ -205,6 +209,7 @@ const Dashboard = () => {
               companyCnpj={companyCnpj}
               destination={destination}
               scheduledDate={scheduledDate}
+              scheduledReturnDate={scheduledReturnDate}
               arrivalTime={arrivalTime}
               returnTime={returnTime}
               payment={payment}

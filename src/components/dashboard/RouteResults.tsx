@@ -28,6 +28,7 @@ interface RouteResultsProps {
   companyCnpj: string;
   destination: string;
   scheduledDate?: string;
+  scheduledReturnDate?: string;
   arrivalTime: string;
   returnTime?: string;
   payment?: string;
@@ -49,6 +50,7 @@ const RouteResults = ({
   companyCnpj,
   destination,
   scheduledDate,
+  scheduledReturnDate,
   arrivalTime,
   returnTime,
   payment,
@@ -112,6 +114,7 @@ const RouteResults = ({
           arrivalTime: route.arrivalTime,
           returnTime: returnTime || "",
           horario_retorno: returnTime || "",
+          scheduledReturnDate: scheduledReturnDate || scheduledDate || "",
           departureTime: route.departureTime,
           estimatedTravelTime: route.estimatedTravelTime,
           vehicleNumber: route.vehicleNumber,
