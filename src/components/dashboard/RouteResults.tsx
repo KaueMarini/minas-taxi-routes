@@ -62,7 +62,6 @@ const RouteResults = ({
   const [routeReasons, setRouteReasons] = useState<Record<string, string>>({});
   const [motivos, setMotivos] = useState<string[]>(DEFAULT_MOTIVOS);
   const [newMotivo, setNewMotivo] = useState("");
-  
 
   useEffect(() => {
     try {
