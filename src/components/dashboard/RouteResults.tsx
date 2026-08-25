@@ -144,8 +144,42 @@ const RouteResults = ({
       });
 
       if (!response.ok) throw new Error(`Erro: ${response.status}`);
+
+      const rawPrice = (routePrices[route.id] || "").replace(",", ".").trim();
+      const priceValue = rawPrice === "" ? null : Number(rawPrice);
+      const { error: dbError } = await supabase.from("rides").insert({
+        company_name: companyName || null,
+        company_cnpj: companyCnpj || null,
+        destination: destination || null,
+        route_name: route.routeName,
+        vehicle_number: route.vehicleNumber,
+        scheduled_date: scheduledDate || null,
+        arrival_time: route.arrivalTime || null,
+        return_time: returnTime || null,
+        departure_time: route.departureTime || null,
+        estimated_travel_time: route.estimatedTravelTime || null,
+        service_time: route.passengers[0]?.serviceTime || null,
+        payment: payment || null,
+        reason: routeReasons[route.id] || null,
+        solicitante: solicitante || null,
+        phone: phone || null,
+        price: priceValue !== null && !Number.isNaN(priceValue) ? priceValue : null,
+        passengers: route.passengers.map((p) => ({
+          name: p.name,
+          address: p.address,
+          phone: p.phone || "",
+          costCenter: p.costCenter || "",
+          re: p.re || "",
+          serviceTime: p.serviceTime || "",
+        })),
+      });
+      if (dbError) {
+        console.error("Erro ao registrar corrida:", dbError);
+        toast.warning("Corrida enviada, mas não foi registrada no histórico.");
+      }
+
       setSentRoutes((prev) => new Set(prev).add(route.id));
-      toast.success(`Carro ${route.vehicleNumber} enviado com sucesso!`);
+      toast.success(`Carro ${route.vehicleNumber} enviado e registrado!`);
     } catch (error) {
       console.error("Erro ao enviar rota:", error);
       toast.error(`Erro ao enviar Carro ${route.vehicleNumber}.`);
