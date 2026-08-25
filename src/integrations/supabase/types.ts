@@ -115,7 +115,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      rides_summary: {
+        Args: { _from?: string; _to?: string }
+        Returns: {
+          total_count: number
+          total_price: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
