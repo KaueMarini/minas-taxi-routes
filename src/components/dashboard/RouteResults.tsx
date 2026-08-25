@@ -355,6 +355,17 @@ const RouteResults = ({
             </div>
 
             <div className="mt-3 space-y-2">
+              <div className="flex items-center gap-1.5 rounded-md border bg-muted/30 px-2 py-1.5">
+                <DollarSign className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">Preço da corrida (R$)</span>
+                <Input
+                  value={routePrices[route.id] || ""}
+                  onChange={(e) => setRoutePrices((prev) => ({ ...prev, [route.id]: e.target.value }))}
+                  placeholder="0,00"
+                  inputMode="decimal"
+                  className="ml-auto h-7 w-28 text-xs"
+                />
+              </div>
               <div className="flex gap-1.5">
                 <Select
                   value={routeReasons[route.id] || ""}
