@@ -38,6 +38,78 @@ export type Database = {
         }
         Relationships: []
       }
+      rides: {
+        Row: {
+          arrival_time: string | null
+          company_cnpj: string | null
+          company_name: string | null
+          created_at: string
+          departure_time: string | null
+          destination: string | null
+          estimated_travel_time: string | null
+          id: string
+          passengers: Json
+          payment: string | null
+          phone: string | null
+          price: number | null
+          reason: string | null
+          return_time: string | null
+          route_name: string | null
+          scheduled_date: string | null
+          service_time: string | null
+          solicitante: string | null
+          updated_at: string
+          user_id: string | null
+          vehicle_number: number | null
+        }
+        Insert: {
+          arrival_time?: string | null
+          company_cnpj?: string | null
+          company_name?: string | null
+          created_at?: string
+          departure_time?: string | null
+          destination?: string | null
+          estimated_travel_time?: string | null
+          id?: string
+          passengers?: Json
+          payment?: string | null
+          phone?: string | null
+          price?: number | null
+          reason?: string | null
+          return_time?: string | null
+          route_name?: string | null
+          scheduled_date?: string | null
+          service_time?: string | null
+          solicitante?: string | null
+          updated_at?: string
+          user_id?: string | null
+          vehicle_number?: number | null
+        }
+        Update: {
+          arrival_time?: string | null
+          company_cnpj?: string | null
+          company_name?: string | null
+          created_at?: string
+          departure_time?: string | null
+          destination?: string | null
+          estimated_travel_time?: string | null
+          id?: string
+          passengers?: Json
+          payment?: string | null
+          phone?: string | null
+          price?: number | null
+          reason?: string | null
+          return_time?: string | null
+          route_name?: string | null
+          scheduled_date?: string | null
+          service_time?: string | null
+          solicitante?: string | null
+          updated_at?: string
+          user_id?: string | null
+          vehicle_number?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

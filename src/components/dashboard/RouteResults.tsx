@@ -2,12 +2,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { RouteCard } from "@/lib/mock-data";
-import { Car, Copy, MapPin, Clock, Loader2, Navigation, Send, FileDown, CheckCircle2, Plus, X } from "lucide-react";
+import { Car, Copy, MapPin, Clock, Loader2, Navigation, Send, FileDown, CheckCircle2, Plus, X, DollarSign } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectSeparator } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { generateRoutesPDF } from "@/lib/pdf-export";
 
 const DEFAULT_MOTIVOS = [
@@ -60,6 +61,7 @@ const RouteResults = ({
   const [sendingRouteId, setSendingRouteId] = useState<string | null>(null);
   const [sentRoutes, setSentRoutes] = useState<Set<string>>(new Set());
   const [routeReasons, setRouteReasons] = useState<Record<string, string>>({});
+  const [routePrices, setRoutePrices] = useState<Record<string, string>>({});
   const [motivos, setMotivos] = useState<string[]>(DEFAULT_MOTIVOS);
   const [newMotivo, setNewMotivo] = useState("");
 
@@ -144,8 +146,42 @@ const RouteResults = ({
       });
 
       if (!response.ok) throw new Error(`Erro: ${response.status}`);
+
+      const rawPrice = (routePrices[route.id] || "").replace(",", ".").trim();
+      const priceValue = rawPrice === "" ? null : Number(rawPrice);
+      const { error: dbError } = await supabase.from("rides").insert({
+        company_name: companyName || null,
+        company_cnpj: companyCnpj || null,
+        destination: destination || null,
+        route_name: route.routeName,
+        vehicle_number: route.vehicleNumber,
+        scheduled_date: scheduledDate || null,
+        arrival_time: route.arrivalTime || null,
+        return_time: returnTime || null,
+        departure_time: route.departureTime || null,
+        estimated_travel_time: route.estimatedTravelTime || null,
+        service_time: route.passengers[0]?.serviceTime || null,
+        payment: payment || null,
+        reason: routeReasons[route.id] || null,
+        solicitante: solicitante || null,
+        phone: phone || null,
+        price: priceValue !== null && !Number.isNaN(priceValue) ? priceValue : null,
+        passengers: route.passengers.map((p) => ({
+          name: p.name,
+          address: p.address,
+          phone: p.phone || "",
+          costCenter: p.costCenter || "",
+          re: p.re || "",
+          serviceTime: p.serviceTime || "",
+        })),
+      });
+      if (dbError) {
+        console.error("Erro ao registrar corrida:", dbError);
+        toast.warning("Corrida enviada, mas não foi registrada no histórico.");
+      }
+
       setSentRoutes((prev) => new Set(prev).add(route.id));
-      toast.success(`Carro ${route.vehicleNumber} enviado com sucesso!`);
+      toast.success(`Carro ${route.vehicleNumber} enviado e registrado!`);
     } catch (error) {
       console.error("Erro ao enviar rota:", error);
       toast.error(`Erro ao enviar Carro ${route.vehicleNumber}.`);
@@ -319,6 +355,17 @@ const RouteResults = ({
             </div>
 
             <div className="mt-3 space-y-2">
+              <div className="flex items-center gap-1.5 rounded-md border bg-muted/30 px-2 py-1.5">
+                <DollarSign className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">Preço da corrida (R$)</span>
+                <Input
+                  value={routePrices[route.id] || ""}
+                  onChange={(e) => setRoutePrices((prev) => ({ ...prev, [route.id]: e.target.value }))}
+                  placeholder="0,00"
+                  inputMode="decimal"
+                  className="ml-auto h-7 w-28 text-xs"
+                />
+              </div>
               <div className="flex gap-1.5">
                 <Select
                   value={routeReasons[route.id] || ""}

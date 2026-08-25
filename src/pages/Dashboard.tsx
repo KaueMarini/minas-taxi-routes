@@ -2,7 +2,8 @@ import { useState, useCallback, useMemo } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { LogOut, X } from "lucide-react";
+import { LogOut, X, Receipt } from "lucide-react";
+import { Link } from "react-router-dom";
 import logo from "@/assets/logo.png";
 import { toast } from "sonner";
 import TripForm from "@/components/dashboard/TripForm";
@@ -142,6 +143,12 @@ const Dashboard = () => {
             <span className="hidden text-xs text-muted-foreground sm:inline">
               {session?.user?.email}
             </span>
+            <Button asChild variant="outline" size="sm" className="h-8 gap-1.5 text-xs">
+              <Link to="/corridas">
+                <Receipt className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Corridas</span>
+              </Link>
+            </Button>
             <Button variant="ghost" size="sm" className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-foreground" onClick={signOut}>
               <LogOut className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Sair</span>
