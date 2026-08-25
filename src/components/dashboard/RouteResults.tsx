@@ -60,6 +60,7 @@ const RouteResults = ({
   const [sendingRouteId, setSendingRouteId] = useState<string | null>(null);
   const [sentRoutes, setSentRoutes] = useState<Set<string>>(new Set());
   const [routeReasons, setRouteReasons] = useState<Record<string, string>>({});
+  const [routePrices, setRoutePrices] = useState<Record<string, string>>({});
   const [motivos, setMotivos] = useState<string[]>(DEFAULT_MOTIVOS);
   const [newMotivo, setNewMotivo] = useState("");
 
