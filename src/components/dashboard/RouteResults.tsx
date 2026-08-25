@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { generateRoutesPDF } from "@/lib/pdf-export";
 
 const DEFAULT_MOTIVOS = [
